@@ -28,7 +28,7 @@ async def get_user_profile(id: Optional[str] = Query(None, description="An optio
     if id is None:
         raise HTTPException(status_code=400, detail="ID parameter is required and cannot be empty.")
 
-    return UserProfile(id, has_subscribtion=False, trusted=False)
+    return UserProfile(id, has_subscribtion=False, trusted=False, rides_count=10, current_debt=0, total_debt=0, last_payment_status='success')
 
 
 @app.get("/configs")
