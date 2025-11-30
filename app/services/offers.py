@@ -2,6 +2,8 @@ import uuid
 
 from app.clients import data_requests as dr
 from app.models import ConfigMap, OfferData, TariffZone, UserProfile
+from app.repository import configs as configs_repo
+from app.repository import zones as zones_repo
 from app.utils.pricing import DEFAULT_TARIFF_VERSION, PRICING_ALGO_VERSION, generate_pricing_token
 import structlog
 
@@ -18,11 +20,10 @@ def create_offer(scooter_id: str, user_id: str, configs: ConfigMap) -> tuple[Off
     logger.info("create_offer: start", scooter_id=scooter_id, user_id=user_id)
 
     scooter_data = dr.get_scooter_data(scooter_id)
-    tariff = dr.get_tariff_zone(scooter_data.zone_id)
+    tariff = zones_repo.get_tariff_zone(scooter_data.zone_id)
     user_profile = dr.get_user_profile(user_id)
 
-    dynamic_configs = dr.get_configs()
-    configs.merge(dynamic_configs)
+    configs = configs_repo.get_configs(configs)
 
     if user_profile.current_debt > 0:
         logger.warning(
