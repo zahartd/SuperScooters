@@ -1,4 +1,5 @@
 import os
+import logging
 import time
 from contextlib import contextmanager
 from typing import Iterator, Optional
@@ -13,11 +14,12 @@ DATABASE_URL = os.getenv(
 )
 
 _pool: Optional[ConnectionPool] = None
-
+logger = logging.getLogger(__name__)
 
 def init_pool(**kwargs) -> ConnectionPool:
     global _pool
     if _pool is None:
+        logger.info("db: creating connection pool")
         _pool = ConnectionPool(
             conninfo=DATABASE_URL,
             kwargs=kwargs,
@@ -28,11 +30,13 @@ def init_pool(**kwargs) -> ConnectionPool:
         attempts = 0
         while True:
             try:
+                logger.info("db: pool opened on attempt %s", attempts + 1)
                 _pool.open()
                 break
             except Exception:
                 attempts += 1
                 if attempts >= 5:
+                    logger.exception("db: failed to open pool after %s attempts", attempts)
                     raise
                 time.sleep(1)
     return _pool
@@ -47,12 +51,15 @@ def get_pool() -> ConnectionPool:
 @contextmanager
 def connection() -> Iterator[Connection]:
     pool = get_pool()
+    logger.debug("db: acquiring connection from pool")
     with pool.connection() as conn:
         conn.execute("SET search_path TO public, partman")
         conn.row_factory = dict_row
         try:
             yield conn
             conn.commit()
+            logger.debug("db: committed transaction")
         except Exception:
             conn.rollback()
+            logger.exception("db: rolled back transaction due to exception")
             raise
