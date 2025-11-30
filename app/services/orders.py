@@ -1,21 +1,12 @@
 import uuid
 from datetime import datetime, timezone
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
 from psycopg import Connection
 import structlog
 
 from app.clients import data_requests as dr
 from app.models import ConfigMap, OfferData, OrderData
-<<<<<<< Updated upstream
-from app.repository import configs as configs_repo
-from app.repository import orders as orders_repo
-=======
 from app.repository.cache import configs as configs_repo
 from app.repository.cache import orders as orders_repo
->>>>>>> Stashed changes
 from app.utils.pricing import validate_pricing_token
 
 logger = structlog.get_logger(__name__)
@@ -66,11 +57,7 @@ def start_order(offer: OfferData, pricing_token: str, conn: Connection, configs:
 
 
 def finish_order(order_id: str, conn: Connection, configs: ConfigMap) -> OrderData:
-<<<<<<< Updated upstream
-    configs_repo.get_configs(configs)
-=======
     _ = configs_repo.get_configs(configs)
->>>>>>> Stashed changes
 
     order = orders_repo.get_order(conn, order_id)
     if order is None:

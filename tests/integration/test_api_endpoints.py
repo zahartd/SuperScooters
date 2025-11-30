@@ -33,7 +33,6 @@ def test_offers_endpoint_rejects_get():
 @pytest.mark.integration
 def test_orders_endpoint_accepts_post():
     """Test that orders endpoint accepts POST requests with valid data"""
-    # First create an offer
     offer_resp = requests.post(
         f"{API_URL}/offers",
         json={"user_id": "user-1", "scooter_id": "scooter-1"},
@@ -41,7 +40,6 @@ def test_orders_endpoint_accepts_post():
     )
     data = offer_resp.json()
     
-    # Then create an order
     resp = requests.post(
         f"{API_URL}/orders",
         json={"offer": data["offer"], "pricing_token": data["pricing_token"]},
@@ -53,7 +51,6 @@ def test_orders_endpoint_accepts_post():
 @pytest.mark.integration
 def test_orders_get_endpoint():
     """Test that orders can be retrieved via GET"""
-    # Create offer and order first
     offer_resp = requests.post(
         f"{API_URL}/offers",
         json={"user_id": "user-1", "scooter_id": "scooter-1"},
@@ -68,7 +65,6 @@ def test_orders_get_endpoint():
     )
     order = order_resp.json()
     
-    # Get the order
     get_resp = requests.get(f"{API_URL}/orders/{order['id']}", timeout=5)
     assert get_resp.status_code == 200
 
@@ -76,7 +72,6 @@ def test_orders_get_endpoint():
 @pytest.mark.integration
 def test_finish_order_endpoint():
     """Test that finish order endpoint works"""
-    # Create offer and order first
     offer_resp = requests.post(
         f"{API_URL}/offers",
         json={"user_id": "user-1", "scooter_id": "scooter-1"},
@@ -91,7 +86,6 @@ def test_finish_order_endpoint():
     )
     order = order_resp.json()
     
-    # Finish the order
     finish_resp = requests.post(
         f"{API_URL}/orders/{order['id']}/finish",
         timeout=5,
@@ -116,7 +110,4 @@ def test_api_returns_json():
 def test_api_handles_cors():
     """Test that API includes CORS headers (if configured)"""
     resp = requests.options(f"{API_URL}/offers", timeout=5)
-    # This will depend on CORS configuration
-    # Just check that OPTIONS is handled
     assert resp.status_code in [200, 405]
-

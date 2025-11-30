@@ -8,7 +8,7 @@ from app.utils.cache import ThreadSafeTTLCache
 
 logger = structlog.get_logger(__name__)
 
-_ORDER_CACHE_TTL_SECONDS = 2 * 60 * 60  # keep active orders + short tail
+_ORDER_CACHE_TTL_SECONDS = 2 * 60 * 60
 _ORDER_CACHE_MAXSIZE = 150_000
 
 _order_cache: ThreadSafeTTLCache[str, OrderData] = ThreadSafeTTLCache(

@@ -10,7 +10,6 @@ def test_order_very_short_ride_free():
     offer, token = create_offer("user-1", "scooter-1")
     order = start_order(offer, token)
     
-    # Wait less than 5 seconds
     time.sleep(1)
     
     finished = finish_order(order["id"])
@@ -25,12 +24,10 @@ def test_order_pricing_calculation():
     offer, token = create_offer("user-1", "scooter-1")
     order = start_order(offer, token)
     
-    # Wait more than 5 seconds
     time.sleep(6)
     
     finished = finish_order(order["id"])
     
-    # Should charge price_unlock + duration * price_per_minute
     expected_minimum = order["price_unlock"]
     assert finished["total_amount"] >= expected_minimum
     assert finished["total_amount"] > 0
@@ -80,6 +77,4 @@ def test_order_finish_time_after_start_time():
     time.sleep(1)
     finished = finish_order(order["id"])
     
-    # Both should be ISO format timestamps
     assert finished["start_time"] < finished["finish_time"]
-

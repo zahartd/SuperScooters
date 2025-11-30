@@ -7,7 +7,7 @@ from app.utils.cache import ThreadSafeTTLCache
 
 logger = structlog.get_logger(__name__)
 
-_ZONE_CACHE_TTL_SECONDS = 600  # ADR: zones cached for ~10 minutes
+_ZONE_CACHE_TTL_SECONDS = 600
 _ZONE_CACHE_MAXSIZE = 10_000
 
 _zone_cache: ThreadSafeTTLCache[str, TariffZone] = ThreadSafeTTLCache(

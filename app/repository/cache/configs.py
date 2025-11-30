@@ -8,7 +8,7 @@ from app.utils.cache import ThreadSafeTTLCache
 
 logger = structlog.get_logger(__name__)
 
-_CONFIG_CACHE_TTL_SECONDS = 60  # ADR: configs refresh up to once per minute
+_CONFIG_CACHE_TTL_SECONDS = 60
 _CONFIG_CACHE_MAXSIZE = 4
 _CONFIG_CACHE_KEY = "config"
 
@@ -41,7 +41,7 @@ def get_configs(base_config: ConfigMap | None = None) -> ConfigMap:
         dynamic = dr.get_configs()
         merged.merge(dynamic)
         logger.debug("configs_cache: fetched dynamic configs")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.warning(
             "configs_cache: failed to fetch dynamic configs, using fallback",
             error=str(exc),

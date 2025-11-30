@@ -16,9 +16,7 @@ def test_offer_deposit_calculation_high_debt():
     """Users with high total debt should have 1.25x deposit"""
     offer, _ = create_offer("user-3", "scooter-1")
     
-    # user-3 has high total debt
     assert offer["deposit"] > 0
-    # Check that deposit is 1.25x the default (300 * 1.25 = 375)
     assert offer["deposit"] == 375
 
 
@@ -27,7 +25,6 @@ def test_offer_deposit_calculation_normal_user():
     """Normal users should have standard deposit"""
     offer, _ = create_offer("user-1", "scooter-1")
     
-    # user-1 has no high debt
     assert offer["deposit"] == 300
 
 
@@ -58,4 +55,3 @@ def test_multiple_offers_same_scooter():
     assert offer1["scooter_id"] == offer2["scooter_id"]
     assert offer1["id"] != offer2["id"]
     assert token1 != token2
-
