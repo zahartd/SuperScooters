@@ -1,5 +1,6 @@
 -- Extensions for partitioning and scheduling
-CREATE EXTENSION IF NOT EXISTS pg_partman;
+CREATE SCHEMA IF NOT EXISTS partman;
+CREATE EXTENSION IF NOT EXISTS pg_partman WITH SCHEMA partman;
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 
 -- Base tables
@@ -12,7 +13,7 @@ CREATE TABLE IF NOT EXISTS user_summary (
 );
 
 CREATE TABLE IF NOT EXISTS orders (
-    id UUID PRIMARY KEY,
+    id UUID NOT NULL,
     user_id TEXT NOT NULL,
     scooter_id TEXT NOT NULL,
     zone_id TEXT NOT NULL,
@@ -22,24 +23,19 @@ CREATE TABLE IF NOT EXISTS orders (
     total_amount INTEGER NOT NULL DEFAULT 0,
     start_time TIMESTAMPTZ NOT NULL,
     finish_time TIMESTAMPTZ NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (created_at, id)
 ) PARTITION BY RANGE (created_at);
 
+CREATE INDEX IF NOT EXISTS idx_orders_id ON orders (id);
+
 -- Configure pg_partman to manage daily partitions for orders
+SET search_path TO partman, public;
 SELECT partman.create_parent(
     p_parent_table := 'public.orders',
     p_control := 'created_at',
-    p_type := 'native',
-    p_interval := 'daily',
+    p_interval := '1 day',
     p_premake := 7,
-    p_automatic_maintenance := 'off'
+    p_automatic_maintenance := 'on'
 )
 WHERE NOT EXISTS (SELECT 1 FROM partman.part_config WHERE parent_table = 'public.orders');
-
--- Schedule regular maintenance for partitions
-SELECT cron.schedule(
-    'partman_maint_orders',
-    '*/15 * * * *',
-    $$SELECT partman.run_maintenance()$$
-)
-WHERE NOT EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'partman_maint_orders');

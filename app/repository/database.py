@@ -1,10 +1,10 @@
 import os
-from contextlib import asynccontextmanager
-from typing import AsyncIterator, Optional
+from contextlib import contextmanager
+from typing import Iterator, Optional
 
-from psycopg import AsyncConnection
-from psycopg_pool import AsyncConnectionPool
+from psycopg import Connection, connect
 from psycopg.rows import dict_row
+from psycopg_pool import ConnectionPool
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
@@ -12,38 +12,38 @@ DATABASE_URL = os.getenv(
 )
 
 # Lazily created pool; apps can initialize early via init_pool().
-_pool: Optional[AsyncConnectionPool] = None
+_pool: Optional[ConnectionPool] = None
 
 
-def init_pool(**kwargs) -> AsyncConnectionPool:
+def init_pool(**kwargs) -> ConnectionPool:
     global _pool
     if _pool is None:
-        _pool = AsyncConnectionPool(
+        _pool = ConnectionPool(
             conninfo=DATABASE_URL,
             kwargs=kwargs,
             open=False,
             min_size=int(os.getenv("DB_POOL_MIN_SIZE", 1)),
             max_size=int(os.getenv("DB_POOL_MAX_SIZE", 10)),
         )
-        _pool.open(wait=True)
+        _pool.open()
     return _pool
 
 
-def get_pool() -> AsyncConnectionPool:
+def get_pool() -> ConnectionPool:
     if _pool is None:
         raise RuntimeError("Connection pool is not initialized; call init_pool() first")
     return _pool
 
 
-@asynccontextmanager
-async def connection() -> AsyncIterator[AsyncConnection]:
+@contextmanager
+def connection() -> Iterator[Connection]:
     pool = get_pool()
-    async with pool.connection() as conn:
-        await conn.set_autocommit(False)
+    with pool.connection() as conn:
+        conn.execute("SET search_path TO public, partman")
         conn.row_factory = dict_row
         try:
             yield conn
-            await conn.commit()
+            conn.commit()
         except Exception:
-            await conn.rollback()
+            conn.rollback()
             raise

@@ -1,45 +1,47 @@
 from typing import Optional
 
-from psycopg import AsyncConnection
+from psycopg import Connection
 
 from app.models import OrderData
 
 
-async def insert_order(conn: AsyncConnection, order: OrderData) -> None:
-    await conn.execute(
-        """
-        INSERT INTO orders (
-            id, user_id, scooter_id, zone_id,
-            price_per_minute, price_unlock, deposit,
-            total_amount, start_time, finish_time, created_at
+def insert_order(conn: Connection, order: OrderData) -> None:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            INSERT INTO orders (
+                id, user_id, scooter_id, zone_id,
+                price_per_minute, price_unlock, deposit,
+                total_amount, start_time, finish_time, created_at
+            )
+            VALUES (
+                %(id)s, %(user_id)s, %(scooter_id)s, %(zone_id)s,
+                %(price_per_minute)s, %(price_unlock)s, %(deposit)s,
+                %(total_amount)s, %(start_time)s, %(finish_time)s, %(start_time)s
+            )
+            """,
+            {
+                "id": order.id,
+                "user_id": order.user_id,
+                "scooter_id": order.scooter_id,
+                "zone_id": getattr(order, "zone_id", ""),
+                "price_per_minute": order.price_per_minute,
+                "price_unlock": order.price_unlock,
+                "deposit": order.deposit,
+                "total_amount": order.total_amount,
+                "start_time": order.start_time,
+                "finish_time": order.finish_time,
+            },
         )
-        VALUES (
-            %(id)s, %(user_id)s, %(scooter_id)s, %(zone_id)s,
-            %(price_per_minute)s, %(price_unlock)s, %(deposit)s,
-            %(total_amount)s, %(start_time)s, %(finish_time)s, %(start_time)s
-        )
-        """,
-        {
-            "id": order.id,
-            "user_id": order.user_id,
-            "scooter_id": order.scooter_id,
-            "zone_id": getattr(order, "zone_id", ""),
-            "price_per_minute": order.price_per_minute,
-            "price_unlock": order.price_unlock,
-            "deposit": order.deposit,
-            "total_amount": order.total_amount,
-            "start_time": order.start_time,
-            "finish_time": order.finish_time,
-        },
-    )
 
 
-async def get_order(conn: AsyncConnection, order_id: str) -> Optional[OrderData]:
-    row = await conn.execute(
-        "SELECT * FROM orders WHERE id = %(order_id)s",
-        {"order_id": order_id},
-    )
-    result = await row.fetchone()
+def get_order(conn: Connection, order_id: str) -> Optional[OrderData]:
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT * FROM orders WHERE id = %(order_id)s",
+            {"order_id": order_id},
+        )
+        result = cur.fetchone()
     if not result:
         return None
     return OrderData(
@@ -56,17 +58,18 @@ async def get_order(conn: AsyncConnection, order_id: str) -> Optional[OrderData]
     )
 
 
-async def update_order_finish(conn: AsyncConnection, order: OrderData) -> None:
-    await conn.execute(
-        """
-        UPDATE orders
-        SET finish_time = %(finish_time)s,
-            total_amount = %(total_amount)s
-        WHERE id = %(id)s
-        """,
-        {
-            "finish_time": order.finish_time,
-            "total_amount": order.total_amount,
-            "id": order.id,
-        },
-    )
+def update_order_finish(conn: Connection, order: OrderData) -> None:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            UPDATE orders
+            SET finish_time = %(finish_time)s,
+                total_amount = %(total_amount)s
+            WHERE id = %(id)s
+            """,
+            {
+                "finish_time": order.finish_time,
+                "total_amount": order.total_amount,
+                "id": order.id,
+            },
+        )
