@@ -3,7 +3,8 @@ import uuid
 from app.clients import data_requests as dr
 from app.models import ConfigMap, OfferData, TariffZone, UserProfile
 from app.utils.pricing import DEFAULT_TARIFF_VERSION, PRICING_ALGO_VERSION, generate_pricing_token
-
+import structlog
+logger = structlog.get_logger(__name__)
 MAGIC_CONSTANT = 28
 
 
@@ -12,6 +13,7 @@ class CreateOfferError:
         self.message = message
 
 def create_offer(scooter_id: str, user_id: str, configs: ConfigMap) -> tuple[OfferData, str] | CreateOfferError:
+    logger.info("create_offer: start scooter_id=%s user_id=%s", scooter_id, user_id)
     scooter_data = dr.get_scooter_data(scooter_id)
     tariff = dr.get_tariff_zone(scooter_data.zone_id)
     user_profile = dr.get_user_profile(user_id)
@@ -20,6 +22,9 @@ def create_offer(scooter_id: str, user_id: str, configs: ConfigMap) -> tuple[Off
     configs.merge(dynamic_configs)
 
     if user_profile.current_debt > 0:
+        logger.warning(
+            "create_offer: user has debt user_id=%s current_debt=%s", user_id, user_profile.current_debt
+        )
         return CreateOfferError("User has debt")
 
     actual_price_per_min = tariff.price_per_minute
@@ -29,6 +34,15 @@ def create_offer(scooter_id: str, user_id: str, configs: ConfigMap) -> tuple[Off
             actual_price_per_min = int(
                 actual_price_per_min * float(configs.price_coeff_settings["low_charge_discount"])
             )
+
+    logger.debug(
+        "create_offer: pricing calculated user_id=%s scooter_id=%s price_per_min=%s price_unlock=%s deposit_default=%s",
+        user_id,
+        scooter_id,
+        actual_price_per_min,
+        tariff.price_unlock,
+        tariff.default_deposit,
+    )
 
     actual_price_unlock = 0 if user_profile.has_subscribtion else tariff.price_unlock
 
@@ -55,6 +69,14 @@ def create_offer(scooter_id: str, user_id: str, configs: ConfigMap) -> tuple[Off
         user_id=user_id,
         tariff_version=tariff_version,
         pricing_algo_version=PRICING_ALGO_VERSION,
+    )
+
+    logger.info(
+        "create_offer: success offer_id=%s user_id=%s scooter_id=%s zone_id=%s",
+        offer.id,
+        user_id,
+        scooter_id,
+        scooter_data.zone_id,
     )
 
     return offer, pricing_token
