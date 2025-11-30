@@ -1,5 +1,4 @@
 import os
-import logging
 import time
 from contextlib import contextmanager
 from typing import Iterator, Optional
@@ -7,6 +6,7 @@ from typing import Iterator, Optional
 from psycopg import Connection
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
+import structlog
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
@@ -14,7 +14,8 @@ DATABASE_URL = os.getenv(
 )
 
 _pool: Optional[ConnectionPool] = None
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
+
 
 def init_pool(**kwargs) -> ConnectionPool:
     global _pool
@@ -30,13 +31,13 @@ def init_pool(**kwargs) -> ConnectionPool:
         attempts = 0
         while True:
             try:
-                logger.info("db: pool opened on attempt %s", attempts + 1)
+                logger.info("db: pool opened", attempt=attempts + 1)
                 _pool.open()
                 break
             except Exception:
                 attempts += 1
                 if attempts >= 5:
-                    logger.exception("db: failed to open pool after %s attempts", attempts)
+                    logger.exception("db: failed to open pool after max attempts", attempts=attempts)
                     raise
                 time.sleep(1)
     return _pool

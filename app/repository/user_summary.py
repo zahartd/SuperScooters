@@ -1,8 +1,9 @@
 from typing import Optional
-
 from psycopg import Connection
 import structlog
+
 logger = structlog.get_logger(__name__)
+
 
 def upsert_user_summary(
     conn: Connection,
@@ -12,8 +13,13 @@ def upsert_user_summary(
     last_payment_status: Optional[str] = None,
 ) -> None:
     try:
-        logger.info("db: upsert user_summary user_id=%s rides=%s debt=%s payment_status=%s",
-                    user_id, delta_rides, delta_debt, last_payment_status)
+        logger.info(
+            "db: upsert user_summary",
+            user_id=user_id,
+            rides=delta_rides,
+            debt=delta_debt,
+            payment_status=last_payment_status,
+        )
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -31,24 +37,38 @@ def upsert_user_summary(
                     "last_payment_status": last_payment_status,
                 },
             )
-            logger.debug("db: user_summary updated successfully user_id=%s", user_id)
+            logger.debug(
+                "db: user_summary updated successfully",
+                user_id=user_id,
+            )
     except Exception as e:
-        logger.error("db: failed to upsert user_summary user_id=%s error=%s",
-                     user_id, str(e))
+        logger.error(
+            "db: failed to upsert user_summary",
+            user_id=user_id,
+            error=str(e),
+        )
         raise
 
 
 def get_user_summary(conn: Connection, user_id: str) -> Optional[dict]:
-    logger.debug("db: get user_summary user_id=%s", user_id)
+    logger.debug("db: get user_summary", user_id=user_id)
     try:
         with conn.cursor() as cur:
             cur.execute(
                 "SELECT user_id, rides_count, current_debt, last_payment_status FROM user_summary WHERE user_id = %(user_id)s",
                 {"user_id": user_id},
             )
-            logger.debug("db: user_summary get successfully user_id=%s", user_id)
-            return cur.fetchone()
+            result = cur.fetchone()
+            logger.debug(
+                "db: user_summary fetched successfully",
+                user_id=user_id,
+                result=result,
+            )
+            return result
     except Exception as e:
-        logger.error("db: failed to get user_summary user_id=%s error=%s",
-                     user_id, str(e))
+        logger.error(
+            "db: failed to get user_summary",
+            user_id=user_id,
+            error=str(e),
+        )
         raise

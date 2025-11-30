@@ -4,6 +4,7 @@ from app.clients import data_requests as dr
 from app.models import ConfigMap, OfferData, TariffZone, UserProfile
 from app.utils.pricing import DEFAULT_TARIFF_VERSION, PRICING_ALGO_VERSION, generate_pricing_token
 import structlog
+
 logger = structlog.get_logger(__name__)
 MAGIC_CONSTANT = 28
 
@@ -12,8 +13,10 @@ class CreateOfferError:
     def __init__(self, message: str):
         self.message = message
 
+
 def create_offer(scooter_id: str, user_id: str, configs: ConfigMap) -> tuple[OfferData, str] | CreateOfferError:
-    logger.info("create_offer: start scooter_id=%s user_id=%s", scooter_id, user_id)
+    logger.info("create_offer: start", scooter_id=scooter_id, user_id=user_id)
+
     scooter_data = dr.get_scooter_data(scooter_id)
     tariff = dr.get_tariff_zone(scooter_data.zone_id)
     user_profile = dr.get_user_profile(user_id)
@@ -23,7 +26,7 @@ def create_offer(scooter_id: str, user_id: str, configs: ConfigMap) -> tuple[Off
 
     if user_profile.current_debt > 0:
         logger.warning(
-            "create_offer: user has debt user_id=%s current_debt=%s", user_id, user_profile.current_debt
+            "create_offer: user has debt", user_id=user_id, current_debt=user_profile.current_debt
         )
         return CreateOfferError("User has debt")
 
@@ -36,12 +39,12 @@ def create_offer(scooter_id: str, user_id: str, configs: ConfigMap) -> tuple[Off
             )
 
     logger.debug(
-        "create_offer: pricing calculated user_id=%s scooter_id=%s price_per_min=%s price_unlock=%s deposit_default=%s",
-        user_id,
-        scooter_id,
-        actual_price_per_min,
-        tariff.price_unlock,
-        tariff.default_deposit,
+        "create_offer: pricing calculated",
+        user_id=user_id,
+        scooter_id=scooter_id,
+        price_per_min=actual_price_per_min,
+        price_unlock=tariff.price_unlock,
+        deposit_default=tariff.default_deposit,
     )
 
     actual_price_unlock = 0 if user_profile.has_subscribtion else tariff.price_unlock
@@ -72,11 +75,11 @@ def create_offer(scooter_id: str, user_id: str, configs: ConfigMap) -> tuple[Off
     )
 
     logger.info(
-        "create_offer: success offer_id=%s user_id=%s scooter_id=%s zone_id=%s",
-        offer.id,
-        user_id,
-        scooter_id,
-        scooter_data.zone_id,
+        "create_offer: success",
+        offer_id=offer.id,
+        user_id=user_id,
+        scooter_id=scooter_id,
+        zone_id=scooter_data.zone_id,
     )
 
     return offer, pricing_token
