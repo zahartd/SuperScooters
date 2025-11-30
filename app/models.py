@@ -26,6 +26,9 @@ class UserProfile:
     id: str
     has_subscribtion: bool
     trusted: bool
+    rides_count: int
+    current_debt: int
+    last_payment_status: str
 
 
 @dataclass
