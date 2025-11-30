@@ -1,24 +1,12 @@
 from typing import Optional
-from app.utils.cache import ThreadSafeTTLCache
 
 from psycopg import Connection
 
 from app.models import OrderData
 
 import structlog
+
 logger = structlog.get_logger(__name__)
-
-_ORDER_CACHE_TTL_SECONDS = 2 * 60 * 60  # keep active + short tail after finish
-_ORDER_CACHE_MAXSIZE = 150_000
-
-_order_cache: ThreadSafeTTLCache[str, OrderData] = ThreadSafeTTLCache(
-    maxsize=_ORDER_CACHE_MAXSIZE,
-    ttl=_ORDER_CACHE_TTL_SECONDS,
-)
-
-
-def _cache_order(order: OrderData) -> None:
-    _order_cache.set(order.id, order)
 
 
 def insert_order(conn: Connection, order: OrderData) -> None:
@@ -50,16 +38,9 @@ def insert_order(conn: Connection, order: OrderData) -> None:
             },
         )
     logger.debug("orders_repo: inserted order", order_id=order.id, user_id=order.user_id)
-    _cache_order(order)
 
 
 def get_order(conn: Connection, order_id: str) -> Optional[OrderData]:
-    cached_order = _order_cache.get(order_id)
-    if cached_order is not None:
-        logger.debug("orders_repo: cache hit", order_id=order_id)
-        return cached_order
-    logger.debug("orders_repo: cache miss, querying db", order_id=order_id)
-
     with conn.cursor() as cur:
         cur.execute(
             "SELECT * FROM orders WHERE id = %(order_id)s",
@@ -82,7 +63,6 @@ def get_order(conn: Connection, order_id: str) -> Optional[OrderData]:
         start_time=result["start_time"],
         finish_time=result["finish_time"],
     )
-    _cache_order(order)
     return order
 
 
@@ -106,4 +86,3 @@ def update_order_finish(conn: Connection, order: OrderData) -> None:
         order_id=order.id,
         total_amount=order.total_amount
     )
-    _cache_order(order)

@@ -8,7 +8,6 @@ from jwt import InvalidTokenError
 
 from app.models import OfferData, PricingTokenPayload
 
-# Defaults kept local; in production should be configurable via env/config provider.
 PRICING_TOKEN_TTL_SECONDS = 180
 PRICING_TOKEN_SECRET = "super-secret-pricing-key"
 PRICING_ALGO_VERSION = "v1"

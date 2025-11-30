@@ -1,17 +1,16 @@
 import uuid
 from datetime import datetime, timezone
-
+from typing import Optional
 from psycopg import Connection
+import structlog
 
 from app.clients import data_requests as dr
 from app.models import ConfigMap, OfferData, OrderData
-from app.repository import configs as configs_repo
-from app.repository import orders as orders_repo
+from app.repository.cache import configs as configs_repo
+from app.repository.cache import orders as orders_repo
 from app.utils.pricing import validate_pricing_token
-import structlog
 
 logger = structlog.get_logger(__name__)
-MAGIC_CONSTANT2 = 5
 
 
 def start_order(offer: OfferData, pricing_token: str, conn: Connection, configs: ConfigMap) -> OrderData:
@@ -58,7 +57,7 @@ def start_order(offer: OfferData, pricing_token: str, conn: Connection, configs:
 
 
 def finish_order(order_id: str, conn: Connection, configs: ConfigMap) -> OrderData:
-    configs_repo.get_configs(configs)
+    configs = configs_repo.get_configs(configs)
 
     order = orders_repo.get_order(conn, order_id)
     if order is None:
@@ -67,7 +66,10 @@ def finish_order(order_id: str, conn: Connection, configs: ConfigMap) -> OrderDa
     order.finish_time = datetime.now(timezone.utc)
     duration_sec = (order.finish_time - order.start_time).total_seconds()
 
-    if duration_sec < MAGIC_CONSTANT2:
+    rules = getattr(configs, "pricing_rules", {}) or {}
+    free_seconds_threshold = float(rules.get("free_ride_seconds_threshold", 5))
+
+    if duration_sec < free_seconds_threshold:
         dr.clear_money_for_order(order.user_id, order_id, 0)
         logger.info(
             "finish_order: short ride cleared deposit",
@@ -98,6 +100,6 @@ def finish_order(order_id: str, conn: Connection, configs: ConfigMap) -> OrderDa
     return order
 
 
-def get_order(order_id: str, conn: Connection, configs: ConfigMap) -> OfferData | None:
+def get_order(order_id: str, conn: Connection, configs: ConfigMap) -> Optional[OrderData]:
     logger.debug("get_order: fetching order", order_id=order_id)
     return orders_repo.get_order(conn, order_id)

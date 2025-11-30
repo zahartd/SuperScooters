@@ -2,7 +2,7 @@ from fastapi import FastAPI
 import structlog
 
 from app.api.routes import router as api_router
-from app.repository.database import init_pool
+from app.repository.db.database import init_pool
 from app.logging_config import configure_logging
 from app.metrics import MetricsMiddleware, start_metrics_server
 

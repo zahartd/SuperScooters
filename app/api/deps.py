@@ -3,7 +3,7 @@ from typing import Iterator
 
 from psycopg import Connection
 
-from app.repository.database import connection
+from app.repository.db.database import connection
 
 logger = structlog.get_logger(__name__)
 

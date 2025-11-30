@@ -43,7 +43,6 @@ def test_canonical_offer_json_is_sorted(sample_offer):
     """Test that canonical JSON has sorted keys"""
     json_str = _canonical_offer_json(sample_offer)
     
-    # Should contain all fields in sorted order
     assert "deposit" in json_str
     assert json_str.index("deposit") < json_str.index("id")
     assert json_str.index("id") < json_str.index("price_per_minute")
@@ -56,7 +55,7 @@ def test_compute_offer_hash_is_deterministic(sample_offer):
     
     assert hash1 == hash2
     assert isinstance(hash1, str)
-    assert len(hash1) == 64  # SHA-256 hex digest
+    assert len(hash1) == 64
 
 
 def test_compute_offer_hash_changes_with_offer():
@@ -99,7 +98,6 @@ def test_generate_pricing_token_creates_valid_token(sample_offer):
     assert isinstance(token, str)
     assert len(token) > 0
     
-    # Should be decodable
     payload = decode_pricing_token(token)
     assert payload.user_id == "user-1"
 
@@ -143,7 +141,6 @@ def test_validate_pricing_token_accepts_valid_token(sample_offer, sample_configs
         pricing_algo_version="v1",
     )
     
-    # Should not raise
     payload = validate_pricing_token(sample_offer, token, sample_configs)
     assert payload.user_id == sample_offer.user_id
 
@@ -180,13 +177,12 @@ def test_validate_pricing_token_rejects_tampered_offer(sample_configs):
         pricing_algo_version="v1",
     )
     
-    # Tamper with offer
     tampered_offer = OfferData(
         id="offer-123",
         user_id="user-1",
         scooter_id="scooter-1",
         zone_id="zone-1",
-        price_per_minute=1,  # Changed!
+        price_per_minute=1,
         price_unlock=100,
         deposit=300,
     )
@@ -241,9 +237,7 @@ def test_pricing_token_has_expiration(sample_offer):
     payload = decode_pricing_token(token)
     expires_at = datetime.fromisoformat(payload.expires_at)
     
-    # Should expire in the future
     assert expires_at > datetime.utcnow()
-    # Should be within reasonable timeframe (e.g., 3 minutes + buffer)
     assert expires_at < datetime.utcnow() + timedelta(minutes=5)
 
 
@@ -273,4 +267,3 @@ def test_different_offers_produce_different_tokens():
     token2 = generate_pricing_token(offer2, "user-1", "v1", "v1")
     
     assert token1 != token2
-

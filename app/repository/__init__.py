@@ -1,1 +1,3 @@
-# Repository layer initialization placeholder.
+from app.repository import cache, db
+
+__all__ = ["cache", "db"]

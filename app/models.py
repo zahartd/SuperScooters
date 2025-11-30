@@ -3,9 +3,6 @@ from dataclasses import dataclass
 from datetime import datetime
 
 
-# Содержит в себе DTO (data transfer objects) / данные, получаемые из внешних источников
-
-
 @dataclass
 class ScooterData:
     id: str
@@ -76,7 +73,15 @@ class ConfigMap:
         return self._data.get(item, None)
     
     def merge(self, other: 'ConfigMap'):
-        self._data.update(other._data)
+        for key, value in other._data.items():
+            if isinstance(value, dict) and isinstance(self._data.get(key), dict):
+                merged = self._data[key].copy()
+                merged.update(value)
+                self._data[key] = merged
+                self.__setattr__(key, merged)
+            else:
+                self._data[key] = value
+                self.__setattr__(key, value)
     
     def clone(self):
         return ConfigMap(self._data.copy())

@@ -1,14 +1,13 @@
 import uuid
+import structlog
 
 from app.clients import data_requests as dr
 from app.models import ConfigMap, OfferData, TariffZone, UserProfile
-from app.repository import configs as configs_repo
-from app.repository import zones as zones_repo
+from app.repository.cache import configs as configs_repo
+from app.repository.cache import zones as zones_repo
 from app.utils.pricing import DEFAULT_TARIFF_VERSION, PRICING_ALGO_VERSION, generate_pricing_token
-import structlog
 
 logger = structlog.get_logger(__name__)
-MAGIC_CONSTANT = 28
 
 
 class CreateOfferError:
@@ -34,7 +33,8 @@ def create_offer(scooter_id: str, user_id: str, configs: ConfigMap) -> tuple[Off
     actual_price_per_min = tariff.price_per_minute
     if configs.price_coeff_settings is not None:
         actual_price_per_min = int(actual_price_per_min * float(configs.price_coeff_settings["surge"]))
-        if scooter_data.charge < MAGIC_CONSTANT:
+        low_charge_threshold = float(configs.price_coeff_settings.get("low_charge_threshold", 28))
+        if scooter_data.charge < low_charge_threshold:
             actual_price_per_min = int(
                 actual_price_per_min * float(configs.price_coeff_settings["low_charge_discount"])
             )
@@ -51,11 +51,13 @@ def create_offer(scooter_id: str, user_id: str, configs: ConfigMap) -> tuple[Off
     actual_price_unlock = 0 if user_profile.has_subscribtion else tariff.price_unlock
 
     def calc_deposit(user_profile: UserProfile, tariff: TariffZone) -> int:
-        DEPOSIT_MULTIPLIER = 1.25
-        DEPOSIT_THRESHOLD = 10000
+        rules = getattr(configs, "pricing_rules", {}) or {}
+        deposit_multiplier = float(rules.get("deposit_multiplier", 1.25))
+        deposit_debt_threshold = int(rules.get("deposit_debt_threshold", 10_000))
         if user_profile.trusted:
             return 0
-        return int(tariff.default_deposit * (DEPOSIT_MULTIPLIER if user_profile.total_debt > DEPOSIT_THRESHOLD else 1.0))
+        multiplier = deposit_multiplier if user_profile.total_debt > deposit_debt_threshold else 1.0
+        return int(tariff.default_deposit * multiplier)
 
     offer = OfferData(
         str(uuid.uuid4()),

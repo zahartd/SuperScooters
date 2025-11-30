@@ -13,7 +13,7 @@ def test_create_offer_missing_user_id():
         json={"scooter_id": "scooter-1"},
         timeout=5,
     )
-    assert resp.status_code == 422  # Validation error
+    assert resp.status_code == 422
 
 
 @pytest.mark.integration
@@ -24,7 +24,7 @@ def test_create_offer_missing_scooter_id():
         json={"user_id": "user-1"},
         timeout=5,
     )
-    assert resp.status_code == 422  # Validation error
+    assert resp.status_code == 422
 
 
 @pytest.mark.integration
@@ -59,11 +59,9 @@ def test_create_offer_user_with_active_debt():
         timeout=5,
     )
     
-    # Should succeed but return error in response
     assert resp.status_code == 200
     data = resp.json()
     assert data["error"] is not None
     assert "debt" in data["error"].lower()
     assert data["offer"] is None
     assert data["pricing_token"] is None
-
