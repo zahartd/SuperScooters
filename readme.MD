@@ -107,6 +107,6 @@ docker compose up --build
 
 ## База данных
 
-- Postgres 16 c расширениями `pg_partman` и `pg_cron` для ежедневного партиционирования таблицы `orders`.
+- Postgres 16 c расширениями `pg_partman` для ежедневного партиционирования таблицы `orders`.
 - Миграции (`migrations/001_init.sql`) создают таблицы `orders` (партиционированная) и `user_summary`, настраивают partman и cron-задачу `partman.run_maintenance()`.
 - Переменная окружения `DATABASE_URL` задаёт строку подключения, по умолчанию `postgresql://superscooters:superscooters@db:5432/superscooters` в docker-compose.
