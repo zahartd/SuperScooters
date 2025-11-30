@@ -1,8 +1,9 @@
 import os
+import time
 from contextlib import contextmanager
 from typing import Iterator, Optional
 
-from psycopg import Connection, connect
+from psycopg import Connection
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
@@ -11,7 +12,6 @@ DATABASE_URL = os.getenv(
     "postgresql://superscooters:superscooters@localhost:5432/superscooters",
 )
 
-# Lazily created pool; apps can initialize early via init_pool().
 _pool: Optional[ConnectionPool] = None
 
 
@@ -25,7 +25,16 @@ def init_pool(**kwargs) -> ConnectionPool:
             min_size=int(os.getenv("DB_POOL_MIN_SIZE", 1)),
             max_size=int(os.getenv("DB_POOL_MAX_SIZE", 10)),
         )
-        _pool.open()
+        attempts = 0
+        while True:
+            try:
+                _pool.open()
+                break
+            except Exception:
+                attempts += 1
+                if attempts >= 5:
+                    raise
+                time.sleep(1)
     return _pool
 
 

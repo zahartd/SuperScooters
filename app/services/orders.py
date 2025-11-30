@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.clients import data_requests as dr
 from app.models import OfferData, OrderData
@@ -23,7 +23,7 @@ def start_order(offer: OfferData, pricing_token: str):
         price_unlock=offer.price_unlock,
         deposit=offer.deposit,
         total_amount=0,
-        start_time=datetime.now(),
+        start_time=datetime.now(timezone.utc),
         finish_time=None,
     )
 
@@ -39,7 +39,7 @@ def finish_order(order_id: str):
         if order is None:
             raise KeyError(order_id)
 
-        order.finish_time = datetime.now()
+        order.finish_time = datetime.now(timezone.utc)
         if (order.finish_time - order.start_time).total_seconds() < MAGIC_CONSTANT2:
             dr.clear_money_for_order(order.user_id, order_id, 0)
         else:
