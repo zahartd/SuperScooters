@@ -3,3 +3,7 @@ uvicorn[standard]
 requests
 pyjwt
 psycopg[binary,pool]
+structlog
+python-json-logger
+prometheus-client
+prometheus-fastapi-instrumentator
