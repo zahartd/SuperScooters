@@ -7,7 +7,7 @@ from tests.helpers.api_client import create_offer, start_order, finish_order, ge
 
 @pytest.mark.integration
 def test_order_lifecycle():
-    offer, token = create_offer("user-2", "scooter-2")
+    offer, token = create_offer("user-1", "scooter-2")
     order = start_order(offer, token)
 
     time.sleep(1)

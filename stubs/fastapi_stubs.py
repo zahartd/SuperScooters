@@ -31,10 +31,15 @@ async def get_tariff_zone_data(id: Optional[str] = Query(None, description="An o
 
 @app.get("/user-profile")
 async def get_user_profile(id: Optional[str] = Query(None, description="An optional ID parameter")):
-    if id is None:
+    users_db_mock = {
+        "user-1": UserProfile(id="user-1", has_subscribtion=False, trusted=False, rides_count=10, current_debt=0, total_debt=0, last_payment_status="success"),
+        "user-2": UserProfile(id="user-2", has_subscribtion=True, trusted=True, rides_count=20, current_debt=1000, total_debt=1000, last_payment_status="success"),
+        "user-3": UserProfile(id="user-3", has_subscribtion=False, trusted=False, rides_count=30, current_debt=0, total_debt=20000, last_payment_status="success")
+    }
+    if id is None or id not in users_db_mock:
         raise HTTPException(status_code=400, detail="ID parameter is required and cannot be empty.")
 
-    return UserProfile(id, has_subscribtion=False, trusted=False, rides_count=10, current_debt=0, total_debt=0, last_payment_status='success')
+    return users_db_mock[id]
 
 
 @app.get("/configs")
