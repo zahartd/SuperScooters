@@ -8,7 +8,6 @@ MAGIC_CONSTANT = 28
 
 
 def create_offer(scooter_id: str, user_id: str):
-    # sequential external fetches; can be optimized later
     scooter_data = dr.get_scooter_data(scooter_id)
     tariff = dr.get_tariff_zone(scooter_data.zone_id)
     user_profile = dr.get_user_profile(user_id)
