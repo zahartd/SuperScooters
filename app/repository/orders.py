@@ -1,8 +1,11 @@
+import logging
 from typing import Optional
 
 from psycopg import Connection
 
 from app.models import OrderData
+
+logger = logging.getLogger(__name__)
 
 
 def insert_order(conn: Connection, order: OrderData) -> None:
@@ -33,6 +36,7 @@ def insert_order(conn: Connection, order: OrderData) -> None:
                 "finish_time": order.finish_time,
             },
         )
+    logger.debug("orders_repo: inserted order_id=%s user_id=%s", order.id, order.user_id)
 
 
 def get_order(conn: Connection, order_id: str) -> Optional[OrderData]:
@@ -43,7 +47,9 @@ def get_order(conn: Connection, order_id: str) -> Optional[OrderData]:
         )
         result = cur.fetchone()
     if not result:
+        logger.debug("orders_repo: order not found order_id=%s", order_id)
         return None
+    logger.debug("orders_repo: fetched order order_id=%s", order_id)
     return OrderData(
         id=str(result["id"]),
         user_id=str(result["user_id"]),
@@ -73,3 +79,4 @@ def update_order_finish(conn: Connection, order: OrderData) -> None:
                 "id": order.id,
             },
         )
+    logger.debug("orders_repo: updated finish order_id=%s total_amount=%s", order.id, order.total_amount)

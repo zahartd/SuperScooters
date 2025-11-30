@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 from app.clients import data_requests as dr
@@ -5,19 +6,25 @@ from app.models import OfferData, TariffZone, UserProfile
 from app.utils.pricing import DEFAULT_TARIFF_VERSION, PRICING_ALGO_VERSION, generate_pricing_token
 
 MAGIC_CONSTANT = 28
+logger = logging.getLogger(__name__)
 
 
 class CreateOfferError:
     def __init__(self, message: str):
         self.message = message
 
+
 def create_offer(scooter_id: str, user_id: str) -> tuple[OfferData, str] | CreateOfferError:
+    logger.info("create_offer: start scooter_id=%s user_id=%s", scooter_id, user_id)
     scooter_data = dr.get_scooter_data(scooter_id)
     tariff = dr.get_tariff_zone(scooter_data.zone_id)
     user_profile = dr.get_user_profile(user_id)
     configs = dr.get_configs()
 
     if user_profile.current_debt > 0:
+        logger.warning(
+            "create_offer: user has debt user_id=%s current_debt=%s", user_id, user_profile.current_debt
+        )
         return CreateOfferError("User has debt")
 
     actual_price_per_min = tariff.price_per_minute
@@ -27,6 +34,14 @@ def create_offer(scooter_id: str, user_id: str) -> tuple[OfferData, str] | Creat
             actual_price_per_min = int(
                 actual_price_per_min * float(configs.price_coeff_settings["low_charge_discount"])
             )
+    logger.debug(
+        "create_offer: pricing calculated user_id=%s scooter_id=%s price_per_min=%s price_unlock=%s deposit_default=%s",
+        user_id,
+        scooter_id,
+        actual_price_per_min,
+        tariff.price_unlock,
+        tariff.default_deposit,
+    )
 
     actual_price_unlock = 0 if user_profile.has_subscribtion else tariff.price_unlock
 
@@ -35,8 +50,22 @@ def create_offer(scooter_id: str, user_id: str) -> tuple[OfferData, str] | Creat
         DEPOSIT_THRESHOLD = 10000
         if user_profile.trusted:
             return 0
+<<<<<<< HEAD
         return int(tariff.default_deposit * (DEPOSIT_MULTIPLIER if user_profile.total_debt > DEPOSIT_THRESHOLD else 1.0))
+=======
+        multiplier = DEPOSIT_MULTIPLIER if user_profile.total_debt > DEPOSIT_THRESHOLD else 1.0
+        return int(tariff.default_deposit * multiplier)
+>>>>>>> c2fa013 (-)
 
+    deposit = calc_deposit(user_profile, tariff)
+    logger.debug(
+        "create_offer: deposit calculated user_id=%s scooter_id=%s deposit=%s trusted=%s total_debt=%s",
+        user_id,
+        scooter_id,
+        deposit,
+        user_profile.trusted,
+        user_profile.total_debt,
+    )
     offer = OfferData(
         str(uuid.uuid4()),
         user_id=user_id,
@@ -44,7 +73,7 @@ def create_offer(scooter_id: str, user_id: str) -> tuple[OfferData, str] | Creat
         zone_id=scooter_data.zone_id,
         price_per_minute=actual_price_per_min,
         price_unlock=actual_price_unlock,
-        deposit=calc_deposit(user_profile, tariff),
+        deposit=deposit,
     )
 
     tariff_version = getattr(configs, "tariff_version", DEFAULT_TARIFF_VERSION) or DEFAULT_TARIFF_VERSION
@@ -55,4 +84,11 @@ def create_offer(scooter_id: str, user_id: str) -> tuple[OfferData, str] | Creat
         pricing_algo_version=PRICING_ALGO_VERSION,
     )
 
+    logger.info(
+        "create_offer: success offer_id=%s user_id=%s scooter_id=%s zone_id=%s",
+        offer.id,
+        user_id,
+        scooter_id,
+        scooter_data.zone_id,
+    )
     return offer, pricing_token

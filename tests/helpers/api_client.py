@@ -1,12 +1,15 @@
+import logging
 import os
 from typing import Tuple
 
 import requests
 
 API_URL = os.getenv("API_URL", "http://api:8000")
+logger = logging.getLogger(__name__)
 
 
 def create_offer(user_id: str, scooter_id: str) -> Tuple[dict, str]:
+    logger.info("test-client: creating offer user_id=%s scooter_id=%s", user_id, scooter_id)
     resp = requests.post(
         f"{API_URL}/offers",
         json={"user_id": user_id, "scooter_id": scooter_id},
@@ -18,6 +21,7 @@ def create_offer(user_id: str, scooter_id: str) -> Tuple[dict, str]:
 
 
 def start_order(offer: dict, token: str) -> dict:
+    logger.info("test-client: starting order offer_id=%s user_id=%s", offer.get("id"), offer.get("user_id"))
     resp = requests.post(
         f"{API_URL}/orders",
         json={"offer": offer, "pricing_token": token},
@@ -28,12 +32,14 @@ def start_order(offer: dict, token: str) -> dict:
 
 
 def finish_order(order_id: str) -> dict:
+    logger.info("test-client: finishing order order_id=%s", order_id)
     resp = requests.post(f"{API_URL}/orders/{order_id}/finish", timeout=5)
     resp.raise_for_status()
     return resp.json()
 
 
 def get_order(order_id: str) -> dict:
+    logger.info("test-client: fetching order order_id=%s", order_id)
     resp = requests.get(f"{API_URL}/orders/{order_id}", timeout=5)
     resp.raise_for_status()
     return resp.json()

@@ -29,8 +29,11 @@ services:
       PYTHONPATH: /app
       EXTERNAL_BASE_URL: http://stubs:3629
       DATABASE_URL: postgresql://superscooters:superscooters@db:5432/superscooters
+      LOG_FILE: /logs/api.log
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
     volumes:
       - .:/app
+      - ./logs:/logs
     ports:
       - "8000:8000"
     depends_on:
@@ -44,8 +47,11 @@ services:
     command: python stubs/fastapi_stubs.py
     environment:
       PYTHONPATH: /app
+      LOG_FILE: /logs/stubs.log
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
     volumes:
       - .:/app
+      - ./logs:/logs
     ports:
       - "3629:3629"
 
