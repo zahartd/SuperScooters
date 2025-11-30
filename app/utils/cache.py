@@ -9,11 +9,14 @@ V = TypeVar("V")
 
 
 class ThreadSafeTTLCache(Generic[K, V]):
+<<<<<<< Updated upstream
     """
     Thin wrapper over cachetools.TTLCache with a lock to keep access safe for
     multithreaded FastAPI workers.
     """
 
+=======
+>>>>>>> Stashed changes
     def __init__(self, maxsize: int, ttl: float):
         self._cache: TTLCache[K, V] = TTLCache(maxsize=maxsize, ttl=ttl)
         self._lock = RLock()
