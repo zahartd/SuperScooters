@@ -7,3 +7,4 @@ structlog
 python-json-logger
 prometheus-client
 prometheus-fastapi-instrumentator
+cachetools
