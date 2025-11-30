@@ -50,12 +50,8 @@ def create_offer(scooter_id: str, user_id: str) -> tuple[OfferData, str] | Creat
         DEPOSIT_THRESHOLD = 10000
         if user_profile.trusted:
             return 0
-<<<<<<< HEAD
-        return int(tariff.default_deposit * (DEPOSIT_MULTIPLIER if user_profile.total_debt > DEPOSIT_THRESHOLD else 1.0))
-=======
         multiplier = DEPOSIT_MULTIPLIER if user_profile.total_debt > DEPOSIT_THRESHOLD else 1.0
         return int(tariff.default_deposit * multiplier)
->>>>>>> c2fa013 (-)
 
     deposit = calc_deposit(user_profile, tariff)
     logger.debug(
