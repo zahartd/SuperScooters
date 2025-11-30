@@ -1,9 +1,7 @@
--- Extensions for partitioning and scheduling
 CREATE SCHEMA IF NOT EXISTS partman;
 CREATE EXTENSION IF NOT EXISTS pg_partman WITH SCHEMA partman;
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 
--- Base tables
 CREATE TABLE IF NOT EXISTS user_summary (
     user_id TEXT PRIMARY KEY,
     rides_count INTEGER NOT NULL DEFAULT 0,
@@ -29,7 +27,6 @@ CREATE TABLE IF NOT EXISTS orders (
 
 CREATE INDEX IF NOT EXISTS idx_orders_id ON orders (id);
 
--- Configure pg_partman to manage daily partitions for orders
 SET search_path TO partman, public;
 SELECT partman.create_parent(
     p_parent_table := 'public.orders',
