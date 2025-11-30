@@ -8,12 +8,15 @@ from app.logging_config import configure_logging
 logger = structlog.get_logger(__name__)
 
 def create_app() -> FastAPI:
-    configure_logging()
+    configure_logging(
+        log_level="INFO",
+        log_file="app.log"
+    )
     app = FastAPI(title="SuperScooters API")
 
     @app.on_event("startup")
     def _startup():
-        logger.info("Starting SuperScooters API", version="1.0.0",)
+        logger.info("app: initializing database pool")
         init_pool()
         logger.info("Database connection pool initialized")
 

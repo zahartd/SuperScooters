@@ -4,10 +4,26 @@ import sys
 import uuid
 import time
 
-def configure_logging(log_level: str = "INFO"):
+
+def configure_logging(log_level: str = "INFO", log_file: str = None):
+    handlers = []
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(logging.Formatter("%(name)s: %(message)s"))
+    handlers.append(console_handler)
+
+    if log_file:
+        file_handler = logging.handlers.RotatingFileHandler(
+            filename=log_file,
+            maxBytes=100*1024*1024,
+            backupCount=50,
+            encoding='utf-8',
+            delay=False
+        )
+        file_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
+        handlers.append(file_handler)
+
     logging.basicConfig(
-        format="%(message)s",
-        stream=sys.stdout,
+        handlers=handlers,
         level=getattr(logging, log_level.upper())
     )
 
@@ -19,7 +35,7 @@ def configure_logging(log_level: str = "INFO"):
             structlog.processors.TimeStamper(fmt="iso"),
             structlog.processors.StackInfoRenderer(),
             structlog.processors.format_exc_info,
-            structlog.processors.JSONRenderer()
+            structlog.dev.ConsoleRenderer()
         ],
         wrapper_class=structlog.stdlib.BoundLogger,
         logger_factory=structlog.stdlib.LoggerFactory(),
