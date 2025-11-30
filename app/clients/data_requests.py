@@ -42,7 +42,9 @@ def get_user_profile(user_id: str) -> UserProfile:
     # TODO: data parsing
 
     return UserProfile(id=user_id, has_subscribtion=bool(raw_data.json()['has_subscribtion']),
-                       trusted=bool(raw_data.json()['trusted']))
+                       trusted=bool(raw_data.json()['trusted']), rides_count=int(raw_data.json()['rides_count']),
+                       current_debt=int(raw_data.json()['current_debt']), total_debt=int(raw_data.json()['total_debt']),
+                       last_payment_status=raw_data.json()['last_payment_status'])
 
 
 def get_configs() -> ConfigMap:

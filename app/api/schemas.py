@@ -29,9 +29,9 @@ class OfferPayload(BaseModel):
 
 
 class OfferResponse(BaseModel):
-    offer: OfferPayload | None
-    pricing_token: str | None
-    error: str | None
+    offer: OfferPayload | None = None
+    pricing_token: str | None = None
+    error: str | None = None
 
 
 class OrderStartRequest(BaseModel):
