@@ -3,13 +3,8 @@ import structlog
 
 from app.clients import data_requests as dr
 from app.models import ConfigMap, OfferData, TariffZone, UserProfile
-<<<<<<< Updated upstream
-from app.repository import configs as configs_repo
-from app.repository import zones as zones_repo
-=======
 from app.repository.cache import configs as configs_repo
 from app.repository.cache import zones as zones_repo
->>>>>>> Stashed changes
 from app.utils.pricing import DEFAULT_TARIFF_VERSION, PRICING_ALGO_VERSION, generate_pricing_token
 
 logger = structlog.get_logger(__name__)
