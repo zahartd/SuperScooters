@@ -5,15 +5,16 @@ from typing import Optional
 from psycopg import Connection
 
 from app.clients import data_requests as dr
-from app.models import OfferData, OrderData
+from app.models import ConfigMap, OfferData, OrderData
 from app.repository import orders as orders_repo
 from app.utils.pricing import validate_pricing_token
 
 MAGIC_CONSTANT2 = 5
 
 
-def start_order(offer: OfferData, pricing_token: str, conn: Connection) -> OrderData:
-    configs = dr.get_configs()
+def start_order(offer: OfferData, pricing_token: str, conn: Connection, configs: ConfigMap) -> OrderData:
+    dynamic_configs = dr.get_configs()
+    configs.merge(dynamic_configs)
     validate_pricing_token(offer, pricing_token, configs)
 
     order = OrderData(
@@ -34,7 +35,10 @@ def start_order(offer: OfferData, pricing_token: str, conn: Connection) -> Order
     return order
 
 
-def finish_order(order_id: str, conn: Connection) -> OrderData:
+def finish_order(order_id: str, conn: Connection, configs: ConfigMap) -> OrderData:
+    dynamic_configs = dr.get_configs()
+    configs.merge(dynamic_configs)
+
     order = orders_repo.get_order(conn, order_id)
     if order is None:
         raise KeyError(order_id)
@@ -53,5 +57,5 @@ def finish_order(order_id: str, conn: Connection) -> OrderData:
     return order
 
 
-def get_order(order_id: str, conn: Connection) -> OfferData | None:
+def get_order(order_id: str, conn: Connection, configs: ConfigMap) -> OfferData | None:
     return orders_repo.get_order(conn, order_id)

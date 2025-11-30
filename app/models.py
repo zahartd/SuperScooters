@@ -74,3 +74,9 @@ class ConfigMap:
 
     def __getattr__(self, item):
         return self._data.get(item, None)
+    
+    def merge(self, other: 'ConfigMap'):
+        self._data.update(other._data)
+    
+    def clone(self):
+        return ConfigMap(self._data.copy())
