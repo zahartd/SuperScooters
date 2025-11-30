@@ -23,6 +23,35 @@
 
 Заглушки API. В fastapi_stubs.py реализован сервер FastAPI с эндпоинтами, имитирующими внешние сервисы. В эти сервисы поступают запросы из data_requests.py.
 
+## Новая структура
+
+- `app/api` — схемы и HTTP-маршруты FastAPI.
+- `app/services` — бизнес-логика офферов/заказов.
+- `app/clients` — вызовы внешних сервисов.
+- `app/utils` — общие утилиты (подпись офферов).
+- `app/main.py` — создание FastAPI-приложения.
+- `stubs/fastapi_stubs.py` — заглушки внешних сервисов для локального запуска.
+- `app/repository` — слой работы с БД (инициализация пула, CRUD-хелперы).
+- `migrations/` — SQL-меграции (инициализация таблиц/партиционирования).
+- `app/Dockerfile` и `app/requirements.txt` — контейнер API.
+- `stubs/Dockerfile` и `stubs/requirements.txt` — контейнер заглушек.
+- `tests/Dockerfile` и `tests/requirements.txt` — контейнер для интеграционных сценариев.
+
+## Запуск через Docker Compose
+
+```bash
+docker-compose up --build
+```
+
+Поднимет API на `http://localhost:8000` и заглушки внешних сервисов на `http://localhost:3629`.
+Контейнер `tests` выполняет простой интеграционный прогон (создание/завершение двух заказов).
+
+## База данных
+
+- Postgres 16 c расширениями `pg_partman` и `pg_cron` для ежедневного партиционирования таблицы `orders`.
+- Миграции (`migrations/001_init.sql`) создают таблицы `orders` (партиционированная) и `user_summary`, настраивают partman и cron-задачу `partman.run_maintenance()`.
+- Переменная окружения `DATABASE_URL` задаёт строку подключения, по умолчанию `postgresql://superscooters:superscooters@db:5432/superscooters` в docker-compose.
+
 ## Параметры
 
 1. X – число одновременно создаваемых заказов -- внешняя нагрузка. Измеряется в RPS.

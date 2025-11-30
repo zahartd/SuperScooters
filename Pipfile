@@ -7,9 +7,10 @@ name = "pypi"
 fastapi = "*"
 uvicorn = "*"
 requests = "*"
+pyjwt = "*"
+psycopg = {extras = ["binary"], version = "*"}
 
 [dev-packages]
 
 [requires]
-python_version = "3.13"
-python_full_version = "3.13.7"
+python_version = "3.14"

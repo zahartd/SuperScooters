@@ -2,7 +2,7 @@ from typing import Optional
 from pydantic import BaseModel
 from fastapi import FastAPI, Query, HTTPException
 
-from model import ScooterData, TariffZone, UserProfile
+from app.models import ScooterData, TariffZone, UserProfile
 
 app = FastAPI()
 
