@@ -16,31 +16,25 @@ clear_money_http = f'{BASE_URL}/clear-money-for-order'
 
 
 def get_scooter_data(scooter_id: str) -> ScooterData:
-    raw_data = requests.get(scooter_http, params={'id': scooter_id})
-    if validate_scooter_data(raw_data):
-        return ScooterData(id=scooter_id, zone_id=raw_data.json()['zone_id'],
-                       charge=int(raw_data.json()['charge']))
-    return None
+    raw_data = requests.get(scooter_http, params={'id': scooter_id}).json()
+    return ScooterData(id=scooter_id, zone_id=raw_data.get('zone_id', ''),
+                       charge=int(raw_data.get('charge', 0)))
 
 def get_tariff_zone(zone_id: str) -> TariffZone:
-    raw_data = requests.get(tariff_zone_http, params={'id': zone_id})
-    if validate_tariff_zone(raw_data):
-        return TariffZone(id=zone_id,
-                      price_per_minute=int(raw_data.json()['price_per_minute']),
-                      price_unlock=int(raw_data.json()['price_unlock']),
-                      default_deposit=int(raw_data.json()['default_deposit']))
-    return None
+    raw_data = requests.get(tariff_zone_http, params={'id': zone_id}).json()
+    return TariffZone(id=zone_id,
+                      price_per_minute=int(raw_data.get('price_per_minute', 0)),
+                      price_unlock=int(raw_data.get('price_unlock', 0)),
+                      default_deposit=int(raw_data.get('default_deposit', 0)))
 
 
 def get_user_profile(user_id: str) -> UserProfile:
-    raw_data = requests.get(user_http, params={'id': user_id})
+    raw_data = requests.get(user_http, params={'id': user_id}).json()
 
-    if validate_user_profile(raw_data):
-        return UserProfile(id=user_id, has_subscribtion=bool(raw_data.json()['has_subscribtion']),
-                        trusted=bool(raw_data.json()['trusted']), rides_count=int(raw_data.json()['rides_count']),
-                        current_debt=int(raw_data.json()['current_debt']), total_debt=int(raw_data.json()['total_debt']),
-                        last_payment_status=raw_data.json()['last_payment_status'])
-    return None
+    return UserProfile(id=user_id, has_subscribtion=bool(raw_data.get('has_subscribtion', False)),
+                       trusted=bool(raw_data.get('trusted', False)), rides_count=int(raw_data.get('rides_count', 0)),
+                       current_debt=int(raw_data.get('current_debt', 0)), total_debt=int(raw_data.get('total_debt', 0)),
+                       last_payment_status=raw_data.get('last_payment_status', ''))
 
 
 def get_configs() -> ConfigMap:
