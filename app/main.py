@@ -4,6 +4,7 @@ import structlog
 from app.api.routes import router as api_router
 from app.repository.database import init_pool
 from app.logging_config import configure_logging
+from app.metrics import MetricsMiddleware, start_metrics_server
 
 logger = structlog.get_logger(__name__)
 
@@ -29,3 +30,5 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
+app.add_middleware(MetricsMiddleware)
+start_metrics_server(8001)

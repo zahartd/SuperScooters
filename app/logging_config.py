@@ -1,9 +1,6 @@
 import structlog
 import logging
 import sys
-import uuid
-import time
-
 
 def configure_logging(log_level: str = "INFO", log_file: str = None):
     handlers = []
