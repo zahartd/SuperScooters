@@ -8,7 +8,7 @@ fastapi = "*"
 uvicorn = "*"
 requests = "*"
 pyjwt = "*"
-psycopg = {extras = ["binary"], version = "*"}
+psycopg = {extras = ["binary", "pool"], version = "*"}
 
 [dev-packages]
 

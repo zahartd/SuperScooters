@@ -2,4 +2,4 @@ fastapi
 uvicorn[standard]
 requests
 pyjwt
-psycopg[binary]
+psycopg[binary,pool]
