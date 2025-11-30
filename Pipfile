@@ -9,6 +9,7 @@ uvicorn = "*"
 requests = "*"
 pyjwt = "*"
 psycopg = {extras = ["binary", "pool"], version = "*"}
+cachetools = "*"
 
 [dev-packages]
 
