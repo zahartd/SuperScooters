@@ -70,7 +70,7 @@ docker compose down --rmi all --volumes --remove-orphans
 docker system prune -af --volumes
 
 # собрать образы заново и поднять стек
-docker-compose up --build
+docker compose up --build
 ```
 
 Стек включает:
