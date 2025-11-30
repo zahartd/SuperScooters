@@ -28,6 +28,7 @@ class UserProfile:
     trusted: bool
     rides_count: int
     current_debt: int
+    total_debt: int
     last_payment_status: str
 
 

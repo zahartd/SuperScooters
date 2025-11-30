@@ -1,7 +1,7 @@
 import uuid
 
 from app.clients import data_requests as dr
-from app.models import OfferData
+from app.models import OfferData, TariffZone, UserProfile
 from app.utils.pricing import DEFAULT_TARIFF_VERSION, PRICING_ALGO_VERSION, generate_pricing_token
 
 MAGIC_CONSTANT = 28
@@ -30,6 +30,13 @@ def create_offer(scooter_id: str, user_id: str) -> tuple[OfferData, str] | Creat
 
     actual_price_unlock = 0 if user_profile.has_subscribtion else tariff.price_unlock
 
+    def calc_deposit(user_profile: UserProfile, tariff: TariffZone) -> int:
+        DEPOSIT_MULTIPLIER = 1.25
+        DEPOSIT_THRESHOLD = 10000
+        if user_profile.trusted:
+            return 0
+        return tariff.default_deposit *  (DEPOSIT_MULTIPLIER if user_profile.total_debt > DEPOSIT_THRESHOLD else 1.0)
+
     offer = OfferData(
         str(uuid.uuid4()),
         user_id=user_id,
@@ -37,7 +44,7 @@ def create_offer(scooter_id: str, user_id: str) -> tuple[OfferData, str] | Creat
         zone_id=scooter_data.zone_id,
         price_per_minute=actual_price_per_min,
         price_unlock=actual_price_unlock,
-        deposit=0 if user_profile.trusted else tariff.default_deposit,
+        deposit=calc_deposit(user_profile, tariff),
     )
 
     tariff_version = getattr(configs, "tariff_version", DEFAULT_TARIFF_VERSION) or DEFAULT_TARIFF_VERSION
