@@ -3,13 +3,15 @@ from psycopg import Connection
 
 from app.models import OrderData
 from app.repository.db import orders as orders_db
+from app.static_config import static_config
 from app.utils.cache import ThreadSafeTTLCache
 
 
 logger = structlog.get_logger(__name__)
 
-_ORDER_CACHE_TTL_SECONDS = 2 * 60 * 60
-_ORDER_CACHE_MAXSIZE = 150_000
+_cache_settings = getattr(static_config, "cache_settings", {}) or {}
+_ORDER_CACHE_TTL_SECONDS = int(_cache_settings.get("orders_ttl_seconds", 2 * 60 * 60))
+_ORDER_CACHE_MAXSIZE = int(_cache_settings.get("orders_maxsize", 150_000))
 
 _order_cache: ThreadSafeTTLCache[str, OrderData] = ThreadSafeTTLCache(
     maxsize=_ORDER_CACHE_MAXSIZE,

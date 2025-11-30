@@ -8,8 +8,9 @@ from app.utils.cache import ThreadSafeTTLCache
 
 logger = structlog.get_logger(__name__)
 
-_CONFIG_CACHE_TTL_SECONDS = 60
-_CONFIG_CACHE_MAXSIZE = 4
+_cache_settings = getattr(static_config, "cache_settings", {}) or {}
+_CONFIG_CACHE_TTL_SECONDS = int(_cache_settings.get("configs_ttl_seconds", 60))
+_CONFIG_CACHE_MAXSIZE = int(_cache_settings.get("configs_maxsize", 4))
 _CONFIG_CACHE_KEY = "config"
 
 _config_cache: ThreadSafeTTLCache[str, ConfigMap] = ThreadSafeTTLCache(
