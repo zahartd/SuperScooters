@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, timezone
+from typing import Optional
 from psycopg import Connection
 import structlog
 
@@ -99,6 +100,6 @@ def finish_order(order_id: str, conn: Connection, configs: ConfigMap) -> OrderDa
     return order
 
 
-def get_order(order_id: str, conn: Connection, configs: ConfigMap) -> OrderData | None:
+def get_order(order_id: str, conn: Connection, configs: ConfigMap) -> Optional[OrderData]:
     logger.debug("get_order: fetching order", order_id=order_id)
     return orders_repo.get_order(conn, order_id)
