@@ -17,6 +17,9 @@ def create_offer(scooter_id: str, user_id: str) -> tuple[OfferData, str] | Creat
     user_profile = dr.get_user_profile(user_id)
     configs = dr.get_configs()
 
+    if scooter_data is None or tariff is None or user_profile is None:
+        return CreateOfferError("Invalid data")
+
     if user_profile.current_debt > 0:
         return CreateOfferError("User has debt")
 
