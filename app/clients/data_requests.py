@@ -3,7 +3,6 @@ import os
 import requests
 
 from app.models import TariffZone, UserProfile, ScooterData, ConfigMap
-from app.clients.validate_responses import validate_scooter_data, validate_tariff_zone, validate_user_profile
 
 BASE_URL = os.environ.get("EXTERNAL_BASE_URL", "http://localhost:3629")
 
