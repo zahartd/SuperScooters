@@ -1,13 +1,17 @@
+import os
+
 import requests
 
-from model import TariffZone, UserProfile, ScooterData, ConfigMap
+from app.models import TariffZone, UserProfile, ScooterData, ConfigMap
 
-scooter_http = 'http://localhost:3629/scooter-data'
-tariff_zone_http = 'http://localhost:3629/tariff-zone-data'
-user_http = 'http://localhost:3629/user-profile'
-config_http = 'http://localhost:3629/configs'
-hold_money_http = 'http://localhost:3629/hold-money-for-order'
-clear_money_http = 'http://localhost:3629/clear-money-for-order'
+BASE_URL = os.environ.get("EXTERNAL_BASE_URL", "http://localhost:3629")
+
+scooter_http = f'{BASE_URL}/scooter-data'
+tariff_zone_http = f'{BASE_URL}/tariff-zone-data'
+user_http = f'{BASE_URL}/user-profile'
+config_http = f'{BASE_URL}/configs'
+hold_money_http = f'{BASE_URL}/hold-money-for-order'
+clear_money_http = f'{BASE_URL}/clear-money-for-order'
 
 
 def get_scooter_data(scooter_id: str) -> ScooterData:

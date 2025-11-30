@@ -1,0 +1,66 @@
+services:
+  db:
+    build: ./docker/postgres
+    environment:
+      POSTGRES_DB: superscooters
+      POSTGRES_USER: superscooters
+      POSTGRES_PASSWORD: superscooters
+    command:
+      [
+        "postgres",
+        "-c", "shared_preload_libraries=pg_partman_bgw,pg_cron",
+        "-c", "cron.database_name=superscooters",
+        "-c", "pg_partman_bgw.dbname=superscooters",
+        "-c", "pg_partman_bgw.role=superscooters",
+        "-c", "pg_partman_bgw.interval=3600"
+      ]
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+
+  api:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      PYTHONPATH: /app
+      EXTERNAL_BASE_URL: http://stubs:3629
+      DATABASE_URL: postgresql://superscooters:superscooters@db:5432/superscooters
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - stubs
+
+  stubs:
+    build:
+      context: .
+      dockerfile: stubs/Dockerfile
+    command: python stubs/fastapi_stubs.py
+    environment:
+      PYTHONPATH: /app
+    volumes:
+      - .:/app
+    ports:
+      - "3629:3629"
+
+  tests:
+    build:
+      context: .
+      dockerfile: tests/Dockerfile
+    environment:
+      API_URL: http://api:8000
+    volumes:
+      - .:/app
+    depends_on:
+      - api
+      - stubs
+      - db
+
+volumes:
+  dbdata:
