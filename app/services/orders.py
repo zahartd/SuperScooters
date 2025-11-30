@@ -53,5 +53,5 @@ def finish_order(order_id: str, conn: Connection) -> OrderData:
     return order
 
 
-def get_order(order_id: str, conn: Connection) -> Optional[OrderData]:
+def get_order(order_id: str, conn: Connection) -> OfferData | None:
     return orders_repo.get_order(conn, order_id)
