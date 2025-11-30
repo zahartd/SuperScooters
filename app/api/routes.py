@@ -11,7 +11,10 @@ router = APIRouter()
 
 @router.post("/offers", response_model=OfferResponse)
 def create_offer(request: OfferRequest):
-    offer, token = offers_service.create_offer(request.scooter_id, request.user_id)
+    result = offers_service.create_offer(request.scooter_id, request.user_id)
+    if isinstance(result, offers_service.CreateOfferError):
+        return OfferResponse(error=result.message)
+    offer, token = result
     return OfferResponse(offer=OfferPayload.from_dataclass(offer), pricing_token=token)
 
 

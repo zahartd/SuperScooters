@@ -7,11 +7,18 @@ from app.utils.pricing import DEFAULT_TARIFF_VERSION, PRICING_ALGO_VERSION, gene
 MAGIC_CONSTANT = 28
 
 
-def create_offer(scooter_id: str, user_id: str):
+class CreateOfferError:
+    def __init__(self, message: str):
+        self.message = message
+
+def create_offer(scooter_id: str, user_id: str) -> tuple[OfferData, str] | CreateOfferError:
     scooter_data = dr.get_scooter_data(scooter_id)
     tariff = dr.get_tariff_zone(scooter_data.zone_id)
     user_profile = dr.get_user_profile(user_id)
     configs = dr.get_configs()
+
+    if user_profile.current_debt > 0:
+        return CreateOfferError("User has debt")
 
     actual_price_per_min = tariff.price_per_minute
     if configs.price_coeff_settings is not None:
