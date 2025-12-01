@@ -74,7 +74,7 @@ docker compose up --build
 ```
 
 Стек включает:
-- `db` — Postgres 16 с `pg_partman` и `pg_cron`, миграции из `migrations/`.
+- `db` — Postgres 16 с `pg_partman`, миграции из `migrations/`.
 - `stubs` — заглушки внешних сервисов.
 - `api` — FastAPI-приложение `app.main:app`.
 - `tests` — контейнер с pytest, выполняет интеграционный сценарий.
