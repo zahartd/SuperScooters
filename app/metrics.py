@@ -27,9 +27,13 @@ METRICS = {
         'Offer to order conversions',
         ['status']
     ),
-    'payment_success_rate': Gauge(
-        'payment_success_rate',
-        'Successful payment rate'
+    'payment_hold_success_total': Counter(
+        'payment_hold_success_total',
+        'Successful payment hold operations'
+    ),
+    'payment_clear_success_total': Counter(
+        'payment_clear_success_total',
+        'Successful payment clear operations'
     ),
     'payment_failures_total': Counter(
         'payment_failures_total',
