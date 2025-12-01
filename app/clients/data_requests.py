@@ -82,8 +82,7 @@ def hold_money_for_order(user_id: str, order_id: str, amount: int):
         )
 
         if resp.status_code == 200:
-            METRICS["money_hold_success_total"].inc()
-            METRICS["payment_success_rate"].set(1)
+            METRICS["payment_hold_success_total"].inc()
             logger.info(
                 "data_requests: money hold success",
                 user_id=user_id,
@@ -94,7 +93,6 @@ def hold_money_for_order(user_id: str, order_id: str, amount: int):
             return
 
         METRICS["payment_failures_total"].labels(reason="hold_failed").inc()
-        METRICS["payment_success_rate"].set(0)
         logger.warning(
             "data_requests: money hold failed",
             user_id=user_id,
@@ -124,7 +122,7 @@ def clear_money_for_order(user_id: str, order_id: str, amount: int):
         )
 
         if resp.status_code == 200:
-            METRICS["payment_success_rate"].set(1)
+            METRICS["payment_clear_success_total"].inc()
             logger.info(
                 "data_requests: money clear success",
                 user_id=user_id,
@@ -135,7 +133,6 @@ def clear_money_for_order(user_id: str, order_id: str, amount: int):
             return
 
         METRICS["payment_failures_total"].labels(reason="clear_failed").inc()
-        METRICS["payment_success_rate"].set(0)
         logger.warning(
             "data_requests: money clear failed",
             user_id=user_id,
@@ -144,3 +141,4 @@ def clear_money_for_order(user_id: str, order_id: str, amount: int):
             status_code=resp.status_code,
             attempt=_ + 1
         )
+
