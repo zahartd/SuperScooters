@@ -20,6 +20,8 @@ def create_app() -> FastAPI:
         logger.info("app: initializing database pool")
         init_pool()
         logger.info("Database connection pool initialized")
+        start_metrics_server(8001)
+        logger.info("Metrics server started")
 
     @app.on_event("shutdown")
     def _shutdown():
@@ -31,4 +33,3 @@ def create_app() -> FastAPI:
 
 app = create_app()
 app.add_middleware(MetricsMiddleware)
-start_metrics_server(8001)

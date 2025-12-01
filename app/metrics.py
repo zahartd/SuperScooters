@@ -38,7 +38,8 @@ METRICS = {
     ),
     'cache_hit_ratio': Gauge(
         'cache_hit_ratio',
-        'Cache hit ratio for order details'
+        'Cache hit ratio for order details',
+        ['hit']
     ),
     'external_call_duration': Histogram(
         'external_call_duration_seconds',
