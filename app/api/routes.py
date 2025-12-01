@@ -33,6 +33,10 @@ def create_offer(request: OfferRequest):
         METRICS['offer_conversions_total'].labels(status="success").inc()
         METRICS['api_requests_total'].labels(method="POST", endpoint="/offers", status="200").inc()
         return OfferResponse(offer=OfferPayload.from_dataclass(offer), pricing_token=token)
+    except ValueError as exc:
+        logger.warning("api: create_offer external dependency failed", detail=str(exc))
+        METRICS['api_requests_total'].labels(method="POST", endpoint="/offers", status="400").inc()
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     finally:
         METRICS['api_latency_seconds'].labels(method="POST", endpoint="/offers").observe(time.time() - start)
 
@@ -75,6 +79,10 @@ def finish_order(order_id: str, conn: Connection = Depends(get_connection)):
         logger.warning("api: finish_order not found", order_id=order_id)
         METRICS['api_requests_total'].labels(method="POST", endpoint="/orders/finish", status="404").inc()
         raise HTTPException(status_code=404, detail="order not found")
+    except ValueError as exc:
+        logger.warning("api: finish_order external dependency failed", detail=str(exc))
+        METRICS['api_requests_total'].labels(method="POST", endpoint="/orders/finish", status="400").inc()
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     finally:
         METRICS['api_latency_seconds'].labels(method="POST", endpoint="/orders/finish").observe(time.time() - start)
 

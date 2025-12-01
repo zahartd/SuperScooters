@@ -21,7 +21,15 @@ logger = structlog.get_logger(__name__)
 @measure_external_call("get_scooter_data")
 def get_scooter_data(scooter_id: str) -> ScooterData:
     logger.debug("data_requests: fetching scooter data", scooter_id=scooter_id, url=scooter_http)
-    raw_data = requests.get(scooter_http, params={'id': scooter_id}).json()
+    resp = requests.get(scooter_http, params={'id': scooter_id})
+    if resp.status_code >= 400:
+        logger.warning(
+            "data_requests: scooter service error",
+            scooter_id=scooter_id,
+            status_code=resp.status_code,
+        )
+        raise ValueError("failed to fetch scooter data")
+    raw_data = resp.json()
     logger.debug("data_requests: fetched scooter data", scooter_id=scooter_id, data=raw_data)
     return ScooterData(id=scooter_id, zone_id=raw_data.get('zone_id', ''),
                        charge=int(raw_data.get('charge', 0)))
@@ -103,6 +111,10 @@ def hold_money_for_order(user_id: str, order_id: str, amount: int):
             status_code=resp.status_code,
             attempt=_ + 1
         )
+        if resp.status_code >= 400:
+            break
+
+    raise ValueError("failed to hold money for order")
 
 @measure_external_call("clear_money")
 def clear_money_for_order(user_id: str, order_id: str, amount: int):
@@ -144,3 +156,7 @@ def clear_money_for_order(user_id: str, order_id: str, amount: int):
             status_code=resp.status_code,
             attempt=_ + 1
         )
+        if resp.status_code >= 400:
+            break
+
+    raise ValueError("failed to clear money for order")
