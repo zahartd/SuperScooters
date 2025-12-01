@@ -38,7 +38,7 @@ def test_multiple_users_concurrent_rentals():
     offer2, token2 = create_offer("user-4", "scooter-2")
     order2 = start_order(offer2, token2)
     
-    time.sleep(6)
+    time.sleep(2)
     
     finished1 = finish_order(order1["id"])
     finished2 = finish_order(order2["id"])

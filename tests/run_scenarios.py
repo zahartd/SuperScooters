@@ -45,24 +45,3 @@ def finish_order(order_id: str) -> dict:
     resp = requests.post(f"{API_URL}/orders/{order_id}/finish", timeout=5)
     resp.raise_for_status()
     return resp.json()
-
-
-def run_scenarios() -> None:
-    print("> Starting first scenario! <")
-    offer1, token1 = create_offer("some-user-id", "some-scooter-id")
-    order1 = start_order(offer1, token1)
-    time.sleep(1)
-    finish_order(order1["id"])
-    print("< First scenario is over!\n")
-
-    print("> Starting second scenario! <")
-    offer2, token2 = create_offer("some-user-id", "some-scooter-id")
-    order2 = start_order(offer2, token2)
-    time.sleep(8)
-    finish_order(order2["id"])
-    print("< Second scenario is over!\n")
-
-
-if __name__ == "__main__":
-    wait_for_service(API_URL)
-    run_scenarios()
