@@ -1,0 +1,198 @@
+=====================================================
+SuperScooters API - Примеры запросов с curl
+=====================================================
+
+Базовый URL: http://localhost:8000
+(при использовании docker-compose)
+
+=====================================================
+1. Создание оффера (Create Offer)
+=====================================================
+POST /offers
+
+Создает новый оффер для пользователя и самоката.
+
+curl -X POST http://localhost:8000/offers \
+  -H "Content-Type: application/json" \
+  -d '{
+    "scooter_id": "scooter_001",
+    "user_id": "user_123"
+  }'
+
+Пример успешного ответа:
+{
+  "offer": {
+    "id": "offer_xyz",
+    "user_id": "user_123",
+    "scooter_id": "scooter_001",
+    "zone_id": "zone_A",
+    "price_per_minute": 5,
+    "price_unlock": 50,
+    "deposit": 100
+  },
+  "pricing_token": "token_abc123",
+  "error": null
+}
+
+Пример ответа с ошибкой:
+{
+  "offer": null,
+  "pricing_token": null,
+  "error": "Scooter not available"
+}
+
+=====================================================
+2. Создание заказа (Create Order)
+=====================================================
+POST /orders
+
+Начинает заказ на основе оффера.
+
+curl -X POST http://localhost:8000/orders \
+  -H "Content-Type: application/json" \
+  -d '{
+    "offer": {
+      "id": "offer_xyz",
+      "user_id": "user_123",
+      "scooter_id": "scooter_001",
+      "zone_id": "korolev",
+      "price_per_minute": 24,
+      "price_unlock": 45,
+      "deposit": 300
+    },
+    "pricing_token": "token_abc123"
+  }'
+
+Пример успешного ответа:
+{
+  "id": "order_456",
+  "user_id": "user_123",
+  "scooter_id": "scooter_001",
+  "zone_id": "zone_A",
+  "price_per_minute": 5,
+  "price_unlock": 50,
+  "deposit": 100,
+  "total_amount": 150,
+  "start_time": "2025-12-01T12:00:00",
+  "finish_time": null
+}
+
+Ошибка (400 Bad Request):
+{
+  "detail": "Invalid pricing token"
+}
+
+=====================================================
+3. Завершение заказа (Finish Order)
+=====================================================
+POST /orders/{order_id}/finish
+
+Завершает активный заказ и рассчитывает финальную стоимость.
+
+curl -X POST http://localhost:8000/orders/order_456/finish \
+  -H "Content-Type: application/json"
+
+Пример успешного ответа:
+{
+  "id": "order_456",
+  "user_id": "user_123",
+  "scooter_id": "scooter_001",
+  "zone_id": "zone_A",
+  "price_per_minute": 5,
+  "price_unlock": 50,
+  "deposit": 100,
+  "total_amount": 275,
+  "start_time": "2025-12-01T12:00:00",
+  "finish_time": "2025-12-01T12:45:00"
+}
+
+Ошибка (404 Not Found):
+{
+  "detail": "order not found"
+}
+
+=====================================================
+4. Получение информации о заказе (Get Order)
+=====================================================
+GET /orders/{order_id}
+
+Получает информацию о заказе по его ID.
+
+curl -X GET http://localhost:8000/orders/order_456 \
+  -H "Content-Type: application/json"
+
+Пример успешного ответа (активный заказ):
+{
+  "id": "order_456",
+  "user_id": "user_123",
+  "scooter_id": "scooter_001",
+  "zone_id": "zone_A",
+  "price_per_minute": 5,
+  "price_unlock": 50,
+  "deposit": 100,
+  "total_amount": 150,
+  "start_time": "2025-12-01T12:00:00",
+  "finish_time": null
+}
+
+Пример успешного ответа (завершенный заказ):
+{
+  "id": "order_456",
+  "user_id": "user_123",
+  "scooter_id": "scooter_001",
+  "zone_id": "zone_A",
+  "price_per_minute": 5,
+  "price_unlock": 50,
+  "deposit": 100,
+  "total_amount": 275,
+  "start_time": "2025-12-01T12:00:00",
+  "finish_time": "2025-12-01T12:45:00"
+}
+
+Ошибка (404 Not Found):
+{
+  "detail": "order not found"
+}
+
+=====================================================
+Полный сценарий использования (Complete Flow)
+=====================================================
+
+# Шаг 1: Создать оффер
+curl -X POST http://localhost:8000/offers \
+  -H "Content-Type: application/json" \
+  -d '{
+    "scooter_id": "scooter_001",
+    "user_id": "user_123"
+  }'
+
+# Скопировать из ответа: offer.id, pricing_token и все поля offer
+
+# Шаг 2: Создать заказ (использовать данные из шага 1)
+curl -X POST http://localhost:8000/orders \
+  -H "Content-Type: application/json" \
+  -d '{
+    "offer": {
+      "id": "OFFER_ID_FROM_STEP_1",
+      "user_id": "user_123",
+      "scooter_id": "scooter_001",
+      "zone_id": "ZONE_FROM_STEP_1",
+      "price_per_minute": PRICE_FROM_STEP_1,
+      "price_unlock": UNLOCK_FROM_STEP_1,
+      "deposit": DEPOSIT_FROM_STEP_1
+    },
+    "pricing_token": "TOKEN_FROM_STEP_1"
+  }'
+
+# Скопировать order_id из ответа
+
+# Шаг 3: Проверить статус заказа
+curl -X GET http://localhost:8000/orders/ORDER_ID_FROM_STEP_2
+
+# Шаг 4: Завершить заказ
+curl -X POST http://localhost:8000/orders/ORDER_ID_FROM_STEP_2/finish
+
+# Шаг 5: Проверить финальную стоимость
+curl -X GET http://localhost:8000/orders/ORDER_ID_FROM_STEP_2
+
+
