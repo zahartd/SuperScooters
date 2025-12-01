@@ -9,4 +9,4 @@ COPY . /app
 
 ENV PYTHONPATH=/app
 
-CMD ["pytest", "-q", "--disable-warnings", "-o", "pythonpath=/app"]
+CMD ["pytest", "-q", "--disable-warnings", "-o", "pythonpath=/app", "--cov=app", "--cov-report=html"]
