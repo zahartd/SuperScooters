@@ -60,9 +60,14 @@ METRICS = {
 
 
 class MetricsMiddleware(BaseHTTPMiddleware):
+    def _normalize_endpoint(self, path: str) -> str:
+        if path.startswith('/orders'):
+            return '/orders'
+        return path
+
     async def dispatch(self, request: Request, call_next):
         start_time = time.time()
-        endpoint = request.url.path
+        endpoint = self._normalize_endpoint(request.url.path)
         method = request.method
         request_id = str(uuid.uuid4())
         structlog.contextvars.bind_contextvars(request_id=request_id)
