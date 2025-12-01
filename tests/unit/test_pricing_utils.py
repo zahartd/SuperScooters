@@ -1,6 +1,7 @@
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.models import OfferData
+from app.static_config import static_config
 from app.utils.pricing import (
     generate_pricing_token,
     decode_pricing_token,
@@ -25,10 +26,7 @@ def sample_offer():
 
 @pytest.fixture
 def sample_configs():
-    class Config:
-        tariff_version = "v1"
-        pricing_algo_version = "v1"
-    return Config()
+    return static_config
 
 
 def test_canonical_offer_json_is_deterministic(sample_offer):
@@ -93,6 +91,7 @@ def test_generate_pricing_token_creates_valid_token(sample_offer):
         user_id="user-1",
         tariff_version="v1",
         pricing_algo_version="v1",
+        configs=sample_configs,
     )
     
     assert isinstance(token, str)
@@ -109,9 +108,10 @@ def test_decode_pricing_token_returns_payload(sample_offer):
         user_id="user-1",
         tariff_version="v1",
         pricing_algo_version="v1",
+        configs=sample_configs,
     )
-    
-    payload = decode_pricing_token(token)
+
+    payload = decode_pricing_token(token, sample_configs)
     
     assert payload.user_id == "user-1"
     assert payload.tariff_version == "v1"
@@ -123,13 +123,13 @@ def test_decode_pricing_token_returns_payload(sample_offer):
 def test_decode_pricing_token_raises_on_invalid():
     """Test that invalid token raises ValueError"""
     with pytest.raises(ValueError, match="invalid or expired"):
-        decode_pricing_token("invalid-token")
+        decode_pricing_token("invalid-token", static_config)
 
 
 def test_decode_pricing_token_raises_on_empty():
     """Test that empty token raises ValueError"""
     with pytest.raises(ValueError):
-        decode_pricing_token("")
+        decode_pricing_token("", static_config)
 
 
 def test_validate_pricing_token_accepts_valid_token(sample_offer, sample_configs):
@@ -139,6 +139,7 @@ def test_validate_pricing_token_accepts_valid_token(sample_offer, sample_configs
         user_id=sample_offer.user_id,
         tariff_version="v1",
         pricing_algo_version="v1",
+        configs=sample_configs,
     )
     
     payload = validate_pricing_token(sample_offer, token, sample_configs)
@@ -152,6 +153,7 @@ def test_validate_pricing_token_rejects_wrong_user(sample_offer, sample_configs)
         user_id="different-user",
         tariff_version="v1",
         pricing_algo_version="v1",
+        configs=sample_configs,
     )
     
     with pytest.raises(ValueError, match="user_id mismatch"):
@@ -175,6 +177,7 @@ def test_validate_pricing_token_rejects_tampered_offer(sample_configs):
         user_id="user-1",
         tariff_version="v1",
         pricing_algo_version="v1",
+        configs=sample_configs,
     )
     
     tampered_offer = OfferData(
@@ -198,6 +201,7 @@ def test_validate_pricing_token_rejects_wrong_tariff_version(sample_offer):
         user_id=sample_offer.user_id,
         tariff_version="v2",
         pricing_algo_version="v1",
+        configs=sample_configs,
     )
     
     class Config:
@@ -215,6 +219,7 @@ def test_validate_pricing_token_rejects_wrong_algo_version(sample_offer):
         user_id=sample_offer.user_id,
         tariff_version="v1",
         pricing_algo_version="v2",
+        configs=sample_configs,
     )
     
     class Config:
@@ -232,13 +237,14 @@ def test_pricing_token_has_expiration(sample_offer):
         user_id="user-1",
         tariff_version="v1",
         pricing_algo_version="v1",
+        configs=sample_configs,
     )
     
     payload = decode_pricing_token(token)
     expires_at = datetime.fromisoformat(payload.expires_at)
     
-    assert expires_at > datetime.utcnow()
-    assert expires_at < datetime.utcnow() + timedelta(minutes=5)
+    assert expires_at > datetime.now(timezone.utc)
+    assert expires_at < datetime.now(timezone.utc) + timedelta(minutes=5)
 
 
 def test_different_offers_produce_different_tokens():

@@ -18,5 +18,12 @@ static_config = ConfigMap({
         "zones_maxsize": 10_000,
         "configs_ttl_seconds": 60,
         "configs_maxsize": 4,
-    }
+    },
+    "external_services": {
+        "base_url": "http://localhost:3629",
+    },
+    "pricing_token_secret": "super-secret-pricing-key",
+    "pricing_token_ttl_seconds": 180,
+    "pricing_algo_version": "v1",
+    "default_tariff_version": "v1",
 })

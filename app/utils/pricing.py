@@ -1,17 +1,12 @@
 import hashlib
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict
 
 import jwt
 from jwt import InvalidTokenError
 
-from app.models import OfferData, PricingTokenPayload
-
-PRICING_TOKEN_TTL_SECONDS = 180
-PRICING_TOKEN_SECRET = "super-secret-pricing-key"
-PRICING_ALGO_VERSION = "v1"
-DEFAULT_TARIFF_VERSION = "v1"
+from app.models import ConfigMap, OfferData, PricingTokenPayload
 
 
 def _canonical_offer_json(offer: OfferData) -> str:
@@ -32,8 +27,16 @@ def _compute_offer_hash(offer: OfferData) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
-def generate_pricing_token(offer: OfferData, user_id: str, tariff_version: str, pricing_algo_version: str) -> str:
-    expires_at_dt = datetime.utcnow() + timedelta(seconds=PRICING_TOKEN_TTL_SECONDS)
+def generate_pricing_token(
+    offer: OfferData,
+    user_id: str,
+    tariff_version: str,
+    pricing_algo_version: str,
+    configs: ConfigMap,
+) -> str:
+    ttl_seconds = int(configs.pricing_token_ttl_seconds)
+    secret = str(configs.pricing_token_secret)
+    expires_at_dt = datetime.now(timezone.utc) + timedelta(seconds=ttl_seconds)
     payload: Dict[str, Any] = {
         "user_id": user_id,
         "expires_at": expires_at_dt.isoformat(),
@@ -43,15 +46,16 @@ def generate_pricing_token(offer: OfferData, user_id: str, tariff_version: str, 
         "exp": expires_at_dt,
     }
 
-    token = jwt.encode(payload, PRICING_TOKEN_SECRET, algorithm="HS256")
+    token = jwt.encode(payload, secret, algorithm="HS256")
     if isinstance(token, bytes):
         return token.decode("ascii")
     return token
 
 
-def decode_pricing_token(token: str) -> PricingTokenPayload:
+def decode_pricing_token(token: str, configs: ConfigMap) -> PricingTokenPayload:
+    secret = str(configs.pricing_token_secret)
     try:
-        payload_dict = jwt.decode(token, PRICING_TOKEN_SECRET, algorithms=["HS256"])
+        payload_dict = jwt.decode(token, secret, algorithms=["HS256"])
     except InvalidTokenError as exc:
         raise ValueError("pricing_token is invalid or expired") from exc
 
@@ -68,8 +72,8 @@ def decode_pricing_token(token: str) -> PricingTokenPayload:
     )
 
 
-def validate_pricing_token(offer: OfferData, pricing_token: str, configs) -> PricingTokenPayload:
-    payload = decode_pricing_token(pricing_token)
+def validate_pricing_token(offer: OfferData, pricing_token: str, configs: ConfigMap) -> PricingTokenPayload:
+    payload = decode_pricing_token(pricing_token, configs)
 
     if payload.user_id != offer.user_id:
         raise ValueError("pricing_token.user_id mismatch")
@@ -78,11 +82,11 @@ def validate_pricing_token(offer: OfferData, pricing_token: str, configs) -> Pri
         raise ValueError("offer payload was tampered with")
 
     expires_at = datetime.fromisoformat(payload.expires_at)
-    if datetime.utcnow() > expires_at:
+    if datetime.now(timezone.utc) > expires_at:
         raise ValueError("pricing_token expired")
 
-    allowed_tariff_version = getattr(configs, "tariff_version", DEFAULT_TARIFF_VERSION) or DEFAULT_TARIFF_VERSION
-    allowed_algo_version = getattr(configs, "pricing_algo_version", PRICING_ALGO_VERSION) or PRICING_ALGO_VERSION
+    allowed_tariff_version = configs.tariff_version or configs.default_tariff_version
+    allowed_algo_version = configs.pricing_algo_version
 
     if payload.tariff_version != allowed_tariff_version:
         raise ValueError("pricing_token.tariff_version mismatch")

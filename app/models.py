@@ -82,6 +82,14 @@ class ConfigMap:
             else:
                 self._data[key] = value
                 self.__setattr__(key, value)
+
+    def get_path(self, *path, default=None):
+        current = self._data
+        for segment in path:
+            if not isinstance(current, dict) or segment not in current:
+                return default
+            current = current[segment]
+        return current
     
     def clone(self):
         return ConfigMap(self._data.copy())

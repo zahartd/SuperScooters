@@ -14,8 +14,8 @@ logger = structlog.get_logger(__name__)
 
 
 def start_order(offer: OfferData, pricing_token: str, conn: Connection, configs: ConfigMap) -> OrderData:
-    configs = configs_repo.get_configs(configs)
-    validate_pricing_token(offer, pricing_token, configs)
+    config_provider = configs_repo.ConfigProvider(configs)
+    validate_pricing_token(offer, pricing_token, config_provider.data)
 
     logger.info(
         "start_order: validating token",
@@ -57,7 +57,7 @@ def start_order(offer: OfferData, pricing_token: str, conn: Connection, configs:
 
 
 def finish_order(order_id: str, conn: Connection, configs: ConfigMap) -> OrderData:
-    configs = configs_repo.get_configs(configs)
+    config_provider = configs_repo.ConfigProvider(configs)
 
     order = orders_repo.get_order(conn, order_id)
     if order is None:
@@ -66,7 +66,7 @@ def finish_order(order_id: str, conn: Connection, configs: ConfigMap) -> OrderDa
     order.finish_time = datetime.now(timezone.utc)
     duration_sec = (order.finish_time - order.start_time).total_seconds()
 
-    rules = getattr(configs, "pricing_rules", {}) or {}
+    rules = config_provider.get("pricing_rules", default={}) or {}
     free_seconds_threshold = float(rules.get("free_ride_seconds_threshold", 5))
 
     if duration_sec < free_seconds_threshold:

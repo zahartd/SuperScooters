@@ -2,11 +2,11 @@ import uuid
 import structlog
 
 from app.clients import data_requests as dr
-from app.models import ConfigMap, OfferData, TariffZone, UserProfile
+from app.models import ConfigMap, OfferData
 from app.repository.cache import configs as configs_repo
 from app.repository.cache import zones as zones_repo
 from app.utils.deposit import calc_deposit
-from app.utils.pricing import DEFAULT_TARIFF_VERSION, PRICING_ALGO_VERSION, generate_pricing_token
+from app.utils.pricing import generate_pricing_token
 
 logger = structlog.get_logger(__name__)
 
@@ -23,7 +23,8 @@ def create_offer(scooter_id: str, user_id: str, configs: ConfigMap) -> tuple[Off
     tariff = zones_repo.get_tariff_zone(scooter_data.zone_id)
     user_profile = dr.get_user_profile(user_id)
 
-    configs = configs_repo.get_configs(configs)
+    config_provider = configs_repo.ConfigProvider(configs)
+    configs = config_provider.data
 
     if user_profile.current_debt > 0:
         logger.warning(
@@ -32,12 +33,13 @@ def create_offer(scooter_id: str, user_id: str, configs: ConfigMap) -> tuple[Off
         return CreateOfferError("User has debt")
 
     actual_price_per_min = tariff.price_per_minute
-    if configs.price_coeff_settings is not None:
-        actual_price_per_min = int(actual_price_per_min * float(configs.price_coeff_settings["surge"]))
-        low_charge_threshold = float(configs.price_coeff_settings.get("low_charge_threshold", 28))
+    price_coeffs = config_provider.get("price_coeff_settings", default={}) or {}
+    if price_coeffs:
+        actual_price_per_min = int(actual_price_per_min * float(price_coeffs["surge"]))
+        low_charge_threshold = float(price_coeffs.get("low_charge_threshold", 28))
         if scooter_data.charge < low_charge_threshold:
             actual_price_per_min = int(
-                actual_price_per_min * float(configs.price_coeff_settings["low_charge_discount"])
+                actual_price_per_min * float(price_coeffs["low_charge_discount"])
             )
 
     logger.debug(
@@ -51,7 +53,7 @@ def create_offer(scooter_id: str, user_id: str, configs: ConfigMap) -> tuple[Off
 
     actual_price_unlock = 0 if user_profile.has_subscribtion else tariff.price_unlock
 
-    rules = getattr(configs, "pricing_rules", {}) or {}
+    rules = config_provider.get("pricing_rules", default={}) or {}
     deposit_multiplier = float(rules["deposit_multiplier"])
     deposit_debt_threshold = int(rules["deposit_debt_threshold"])
 
@@ -70,12 +72,14 @@ def create_offer(scooter_id: str, user_id: str, configs: ConfigMap) -> tuple[Off
         ),
     )
 
-    tariff_version = getattr(configs, "tariff_version", DEFAULT_TARIFF_VERSION) or DEFAULT_TARIFF_VERSION
+    tariff_version = config_provider.get("tariff_version") or config_provider.get("default_tariff_version")
+    pricing_algo_version = config_provider.get("pricing_algo_version")
     pricing_token = generate_pricing_token(
         offer=offer,
         user_id=user_id,
         tariff_version=tariff_version,
-        pricing_algo_version=PRICING_ALGO_VERSION,
+        pricing_algo_version=pricing_algo_version,
+        configs=configs,
     )
 
     logger.info(
