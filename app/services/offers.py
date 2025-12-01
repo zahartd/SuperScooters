@@ -5,6 +5,7 @@ from app.clients import data_requests as dr
 from app.models import ConfigMap, OfferData, TariffZone, UserProfile
 from app.repository.cache import configs as configs_repo
 from app.repository.cache import zones as zones_repo
+from app.utils.deposit import calc_deposit
 from app.utils.pricing import DEFAULT_TARIFF_VERSION, PRICING_ALGO_VERSION, generate_pricing_token
 
 logger = structlog.get_logger(__name__)
@@ -50,14 +51,9 @@ def create_offer(scooter_id: str, user_id: str, configs: ConfigMap) -> tuple[Off
 
     actual_price_unlock = 0 if user_profile.has_subscribtion else tariff.price_unlock
 
-    def calc_deposit(user_profile: UserProfile, tariff: TariffZone) -> int:
-        rules = getattr(configs, "pricing_rules", {}) or {}
-        deposit_multiplier = float(rules.get("deposit_multiplier", 1.25))
-        deposit_debt_threshold = int(rules.get("deposit_debt_threshold", 10_000))
-        if user_profile.trusted:
-            return 0
-        multiplier = deposit_multiplier if user_profile.total_debt > deposit_debt_threshold else 1.0
-        return int(tariff.default_deposit * multiplier)
+    rules = getattr(configs, "pricing_rules", {}) or {}
+    deposit_multiplier = float(rules["deposit_multiplier"])
+    deposit_debt_threshold = int(rules["deposit_debt_threshold"])
 
     offer = OfferData(
         str(uuid.uuid4()),
@@ -66,7 +62,12 @@ def create_offer(scooter_id: str, user_id: str, configs: ConfigMap) -> tuple[Off
         zone_id=scooter_data.zone_id,
         price_per_minute=actual_price_per_min,
         price_unlock=actual_price_unlock,
-        deposit=calc_deposit(user_profile, tariff),
+        deposit=calc_deposit(
+            user_profile,
+            tariff,
+            deposit_multiplier,
+            deposit_debt_threshold,
+        ),
     )
 
     tariff_version = getattr(configs, "tariff_version", DEFAULT_TARIFF_VERSION) or DEFAULT_TARIFF_VERSION
